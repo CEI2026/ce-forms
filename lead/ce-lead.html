@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CE Lead Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --amber:      #F7A91E;
+      --amber-dark: #D98A00;
+      --orange:     #E05C00;
+      --charcoal:   #3D3D3D;
+      --charcoal-lt:#5A5A5A;
+      --green:      #2E7D32;
+      --white:      #FFFFFF;
+      --off-white:  #F5F5F5;
+      --border:     #E0E0E0;
+      --border-lt:  #EBEBEB;
+      --text:       #2A2A2A;
+      --text-mid:   #555555;
+      --text-lt:    #909090;
+      --error:      #C62828;
+      --bg:         #F8F8F6;
+      --radius:     8px;
+      --radius-lg:  14px;
+      --shadow:     0 2px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px 16px 48px;
+    }
+
+    .form-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      max-width: 740px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .form-card::before {
+      content: '';
+      display: block;
+      height: 4px;
+      background: linear-gradient(90deg, var(--orange), var(--amber));
+    }
+
+    .form-card-header {
+      padding: 28px 44px 20px;
+      border-bottom: 1px solid var(--border-lt);
+      text-align: center;
+    }
+
+    .form-card-header h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 26px; font-weight: 700; color: var(--charcoal);
+      text-transform: uppercase; letter-spacing: 0.03em;
+      line-height: 1.25; margin-bottom: 6px;
+    }
+
+    .req-note { display: inline-block; margin-top: 8px; font-size: 12px; color: var(--text-lt); }
+    .req-note .star { color: var(--error); }
+
+    /* ── STEP NAV ── */
+    .step-nav {
+      display: flex; align-items: center;
+      padding: 14px 44px;
+      background: var(--off-white);
+      border-bottom: 1px solid var(--border-lt);
+    }
+
+    .step-item {
+      display: flex; align-items: center; gap: 7px;
+      flex: 1; font-size: 11px; font-weight: 600;
+      color: var(--text-lt); white-space: nowrap; letter-spacing: 0.03em;
+    }
+    .step-item.active { color: var(--orange); }
+    .step-item.done   { color: var(--green); }
+
+    .step-dot {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+      transition: all 0.2s; color: var(--text-lt); background: var(--white);
+    }
+    .step-item.active .step-dot {
+      background: linear-gradient(135deg, var(--orange), var(--amber));
+      border-color: transparent; color: var(--white);
+    }
+    .step-item.done .step-dot { background: var(--green); border-color: var(--green); color: var(--white); }
+
+    .step-line { flex: 0 0 20px; height: 2px; background: var(--border); margin: 0 2px; }
+    .step-line.done { background: var(--green); }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .form-body { padding: 0 44px 32px; }
+
+    /* ── SECTIONS ── */
+    .form-section { margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--border-lt); }
+    .form-section:first-child { border-top: none; padding-top: 28px; margin-top: 0; }
+
+    .section-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--orange); margin-bottom: 14px;
+    }
+
+    /* ── PURPOSE TOGGLE ── */
+    .purpose-toggle {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .purpose-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--off-white);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      text-align: left;
+    }
+
+    .purpose-btn:hover { border-color: var(--amber); background: #FFFBF2; }
+
+    .purpose-btn.active {
+      border-color: var(--orange);
+      background: #FFF3E0;
+    }
+
+    .purpose-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .purpose-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--charcoal);
+      font-family: 'Barlow Condensed', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .purpose-text span {
+      display: block;
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.4;
+      margin-top: 2px;
+    }
+
+    .purpose-btn.active .purpose-text strong { color: var(--orange); }
+
+    .purpose-check {
+      margin-left: auto;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .purpose-btn.active .purpose-check {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+
+    .purpose-btn.active .purpose-check::after {
+      content: '';
+      display: block;
+      width: 5px; height: 9px;
+      border: 2px solid white;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+
+    /* ── FIELDS ── */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .field-row.full { grid-template-columns: 1fr; }
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+
+    .field-group label {
+      font-size: 12px; font-weight: 600; color: var(--charcoal-lt);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .req { color: var(--error); margin-left: 2px; }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      font-family: 'Barlow', sans-serif; font-size: 15px;
+      color: var(--text); background: var(--white);
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 10px 14px; width: 100%; outline: none; appearance: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-group input::placeholder,
+    .field-group textarea::placeholder { color: #C0C0C0; }
+    .field-group input:focus,
+    .field-group select:focus,
+    .field-group textarea:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(247,169,30,0.15);
+    }
+    .field-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23909090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 34px; cursor: pointer;
+    }
+
+    .field-note { font-size: 11.5px; color: var(--text-lt); line-height: 1.5; }
+    .field-error { border-color: var(--error) !important; box-shadow: 0 0 0 3px rgba(198,40,40,0.10) !important; }
+
+    /* ── ZIP ROW ── */
+    .zip-row { display: flex; gap: 10px; }
+    .zip-row input { flex: 1; }
+
+    .btn-lookup {
+      font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--white); background: var(--charcoal); border: none;
+      padding: 10px 20px; border-radius: var(--radius); cursor: pointer;
+      white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+    }
+    .btn-lookup:hover { background: var(--orange); }
+    .btn-lookup:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ── ACCOUNT LIST ── */
+    .acct-list {
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      max-height: 220px; overflow-y: auto; background: var(--white); margin-top: 10px;
+    }
+    .acct-list::-webkit-scrollbar { width: 5px; }
+    .acct-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .acct-item {
+      padding: 11px 14px; cursor: pointer;
+      border-bottom: 1px solid var(--border-lt); transition: background 0.12s;
+    }
+    .acct-item:last-child { border-bottom: none; }
+    .acct-item:hover { background: #FFF8EE; }
+    .acct-item.sel { background: #FFF3E0; border-left: 3px solid var(--orange); }
+
+    .acct-name { font-weight: 600; font-size: 14px; color: var(--text); }
+    .acct-sub  { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+
+    /* ── SELECTED BANNER ── */
+    .sel-banner {
+      padding: 12px 14px; background: #FFF3E0;
+      border: 1.5px solid var(--amber); border-radius: var(--radius);
+      display: flex; justify-content: space-between; align-items: center; margin-top: 12px;
+    }
+    .sel-banner-info strong { font-size: 14px; font-weight: 700; color: var(--orange); display: block; }
+    .sel-banner-info span   { font-size: 12px; color: var(--text-mid); }
+    .chg-link { font-size: 12px; color: var(--orange); text-decoration: underline; cursor: pointer; font-weight: 600; white-space: nowrap; }
+
+    /* ── DIVIDER ── */
+    .or-divider {
+      display: flex; align-items: center; gap: 10px; margin: 20px 0;
+      color: var(--text-lt); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── ALERTS ── */
+    .a-err {
+      padding: 10px 13px; background: #FDECEA;
+      border: 1px solid #f5b4b4; border-radius: var(--radius);
+      font-size: 13px; color: var(--error); font-weight: 600;
+      display: none; margin-top: 10px;
+    }
+
+    /* ── SPIN ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+    }
+
+    /* ── CHECKBOXES ── */
+    .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+    .check-item {
+      display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; background: var(--off-white);
+      transition: border-color 0.15s, background 0.15s; user-select: none;
+    }
+    .check-item input[type="checkbox"] { margin-top: 2px; accent-color: var(--orange); flex-shrink: 0; width: 14px; height: 14px; cursor: pointer; }
+    .check-item span { font-size: 13.5px; line-height: 1.4; color: var(--text-mid); font-weight: 500; }
+    .check-item:has(input:checked) { border-color: var(--amber); background: #FFFBF2; }
+    .check-item:has(input:checked) span { color: var(--orange); }
+
+    /* ── STEP ACTIONS ── */
+    .step-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+      padding: 20px 44px 28px; border-top: 1px solid var(--border-lt);
+    }
+
+    .btn-back {
+      font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
+      color: var(--text-mid); background: transparent;
+      border: 1.5px solid var(--border); padding: 9px 20px;
+      border-radius: var(--radius); cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-back:hover { border-color: var(--charcoal-lt); color: var(--charcoal); }
+
+    .btn-next {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 700;
+      color: var(--white); background: var(--amber); border: none;
+      padding: 10px 28px; border-radius: var(--radius); cursor: pointer;
+      letter-spacing: 0.02em; transition: background 0.18s, transform 0.1s;
+    }
+    .btn-next:hover { background: var(--amber-dark); }
+    .btn-next:active { transform: scale(0.98); }
+    .btn-next:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .privacy-note { font-size: 12px; color: var(--text-lt); line-height: 1.6; }
+
+    /* ── SUCCESS ── */
+    .success-state { display: none; text-align: center; padding: 56px 36px; }
+    .success-state.show { display: block; }
+
+    .success-ring {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: #FFFBF2; border: 2px solid var(--amber);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+    }
+    .success-ring svg { color: var(--orange); width: 32px; height: 32px; }
+
+    .success-state h3 {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 24px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--charcoal); margin-bottom: 10px;
+    }
+    .success-state p { font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 400px; margin: 0 auto; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 580px) {
+      body { padding: 16px 8px 32px; }
+      .form-card-header, .form-body { padding-left: 18px; padding-right: 18px; }
+      .step-actions { padding: 16px 18px 22px; flex-direction: column; align-items: stretch; }
+      .btn-next, .btn-back { width: 100%; justify-content: center; }
+      .field-row { grid-template-columns: 1fr; }
+      .checkbox-grid { grid-template-columns: 1fr; }
+      .step-nav { padding: 10px 14px; }
+      .step-item { font-size: 9.5px; gap: 4px; }
+      .step-dot { width: 20px; height: 20px; font-size: 10px; }
+      .step-line { flex: 0 0 12px; }
+      .purpose-toggle { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-card">
+
+  <div class="form-card-header">
+    <h2>Tell us about yourself</h2>
+    <p style="font-size:14px;color:var(--text-mid);margin-top:4px;">Fill out this form and a member of our team will be in touch.</p>
+    <span class="req-note"><span class="star">*</span> Indicates required field</span>
+  </div>
+
+  <!-- STEP NAV -->
+  <div class="step-nav" id="step-nav">
+    <div class="step-item active" id="sn1"><div class="step-dot" id="sd1">1</div><span id="sn1-lbl">About You</span></div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-item" id="sn2"><div class="step-dot" id="sd2">2</div><span id="sn2-lbl">Interests</span></div>
+    <div class="step-line" id="sl2" style="display:none;"></div>
+    <div class="step-item" id="sn3" style="display:none;"><div class="step-dot" id="sd3">3</div><span id="sn3-lbl"></span></div>
+  </div>
+
+  <div id="all-screens">
+
+    <!-- ══ SCREEN 1: CONTACT + PURPOSE + (conditional) ORG ══ -->
+    <div class="screen active" id="sc1">
+      <div class="form-body">
+
+        <!-- PURPOSE TOGGLE -->
+        <div class="form-section">
+          <div class="section-label">Step 1 — About You</div>
+          <p style="font-size:14px;color:var(--text-mid);margin-bottom:14px;">What brings you to Catholic Energies?</p>
+          <div class="purpose-toggle">
+            <div class="purpose-btn active" id="btn-energy" onclick="setPurpose('energy')">
+              <span class="purpose-icon">⚡</span>
+              <div class="purpose-text">
+                <strong>Energy Services</strong>
+                <span>Explore clean energy for our facilities</span>
+              </div>
+              <div class="purpose-check"></div>
+            </div>
+            <div class="purpose-btn" id="btn-partner" onclick="setPurpose('partner')">
+              <span class="purpose-icon">🤝</span>
+              <div class="purpose-text">
+                <strong>Partner in Mission</strong>
+                <span>Support Catholic Energies through investment or giving</span>
+              </div>
+              <div class="purpose-check"></div>
+            </div>
+          </div>
+
+          <!-- CONTACT FIELDS -->
+          <div class="field-row">
+            <div class="field-group">
+              <label>First Name <span class="req">*</span></label>
+              <input type="text" id="first-name" placeholder="Mary" autocomplete="given-name" />
+            </div>
+            <div class="field-group">
+              <label>Last Name <span class="req">*</span></label>
+              <input type="text" id="last-name" placeholder="Sullivan" autocomplete="family-name" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" id="email" placeholder="mary@diocese.org" autocomplete="email" />
+            </div>
+            <div class="field-group">
+              <label>Phone Number</label>
+              <input type="tel" id="phone" placeholder="(202) 555-0100" autocomplete="tel" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Title <span class="req">*</span></label>
+              <input type="text" id="title" placeholder="e.g. Director of Facilities, Program Officer" />
+            </div>
+            <!-- Partner: org name shown here; Energy: hidden -->
+            <div class="field-group" id="partner-org-wrap" style="display:none;">
+              <label>Organization</label>
+              <input type="text" id="partner-org" placeholder="e.g. Smith Family Foundation" autocomplete="organization" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ENERGY: ZIP LOOKUP (conditional) -->
+        <div class="form-section" id="org-section">
+          <div class="section-label">Your Organization</div>
+          <!-- FIX 1: revised wording -->
+          <p style="font-size:14px;color:var(--text-mid);margin-bottom:14px;">Enter your ZIP code to find your organization. If your organization is not displayed, you may enter it manually.</p>
+
+          <div class="field-group" style="margin-bottom:14px;">
+            <label>ZIP Code <span class="req">*</span></label>
+            <div class="zip-row">
+              <input type="text" id="zip" placeholder="e.g. 60601" maxlength="5" inputmode="numeric" />
+              <button class="btn-lookup" id="lookup-btn" onclick="doZipLookup()">Look Up</button>
+            </div>
+            <div class="a-err" id="e-zip">Please enter a valid 5-digit ZIP code.</div>
+          </div>
+
+          <div id="org-results" style="display:none;">
+            <label style="font-size:12px;font-weight:600;color:var(--charcoal-lt);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:6px;">Select Your Organization</label>
+            <div class="acct-list" id="org-list"></div>
+            <div class="a-err" id="e-no-org" style="display:none;margin-top:6px;"></div>
+          </div>
+
+          <div id="org-banner" style="display:none;">
+            <div class="sel-banner">
+              <div class="sel-banner-info">
+                <strong id="b-org-name">—</strong>
+                <span id="b-org-sub"></span>
+              </div>
+              <span class="chg-link" onclick="doChangeOrg()">Change</span>
+            </div>
+          </div>
+
+          <div class="or-divider" id="manual-divider" style="display:none;">or enter manually</div>
+          <div id="manual-section" style="display:none;">
+            <div class="field-row">
+              <div class="field-group">
+                <label>Institution Type <span class="req">*</span></label>
+                <select id="inst-type">
+                  <option value="">— Select —</option>
+                  <option value="Diocese/Archdiocese">Diocese / Archdiocese</option>
+                  <option value="Religious Order">Religious Order</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Institution Name <span class="req">*</span></label>
+                <input type="text" id="inst-name" placeholder="e.g. Archdiocese of Chicago" />
+              </div>
+            </div>
+            <div class="field-row full">
+              <div class="field-group">
+                <label>Organization Name</label>
+                <input type="text" id="org-name" placeholder="e.g. St. Francis of Assisi Parish" />
+                <span class="field-note">If different from the institution above.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="step-actions">
+        <span></span>
+        <button class="btn-next" onclick="goToStep2()">
+          Continue — Areas of Interest
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 2: INTERESTS ══ -->
+    <div class="screen" id="sc2">
+      <div class="form-body">
+        <div class="form-section">
+          <div class="section-label" id="interests-label">Step 2 — Areas of Interest</div>
+          <p style="font-size:14px;color:var(--text-mid);margin-bottom:12px;font-weight:500;">Select all that apply</p>
+
+          <!-- ENERGY interests -->
+          <div id="energy-interests">
+            <div class="checkbox-grid">
+              <label class="check-item"><input type="checkbox" name="e-interest" value="Renewables and Storage" /><span>Renewables and Storage</span></label>
+              <label class="check-item"><input type="checkbox" name="e-interest" value="Energy Analysis and Efficiency" /><span>Energy Analysis and Efficiency</span></label>
+              <label class="check-item"><input type="checkbox" name="e-interest" value="Clean Energy Procurement" /><span>Clean Energy Procurement</span></label>
+              <label class="check-item"><input type="checkbox" name="e-interest" value="Net Zero Planning" /><span>Net Zero Planning</span></label>
+              <label class="check-item" style="grid-column:1/-1;"><input type="checkbox" name="e-interest" value="Carbon Drawdown and Reforestation" /><span>Carbon Drawdown and Reforestation</span></label>
+            </div>
+          </div>
+
+          <!-- PARTNER interests -->
+          <div id="partner-interests" style="display:none;">
+            <div class="checkbox-grid">
+              <label class="check-item"><input type="checkbox" name="p-interest" value="Grants and Philanthropic Gifts" /><span>Grants &amp; Philanthropic Gifts</span></label>
+              <label class="check-item"><input type="checkbox" name="p-interest" value="Program-Related Investments" /><span>Program-Related Investments</span></label>
+              <label class="check-item"><input type="checkbox" name="p-interest" value="Mission-Related Investments" /><span>Mission-Related Investments</span></label>
+              <label class="check-item"><input type="checkbox" name="p-interest" value="Concessionary Capital" /><span>Concessionary Capital</span></label>
+              <label class="check-item"><input type="checkbox" name="p-interest" value="Legacy and Planned Giving" /><span>Legacy &amp; Planned Giving</span></label>
+              <label class="check-item"><input type="checkbox" name="p-interest" value="General Inquiry" /><span>General Inquiry</span></label>
+            </div>
+          </div>
+
+          <!-- FIX 2: interest validation error div -->
+          <div class="a-err" id="e-interests" style="margin-top:12px;">Please select at least one area of interest to continue.</div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">Additional Notes</div>
+          <div class="field-group">
+            <label>Anything else you'd like us to know?</label>
+            <textarea id="notes" rows="4" placeholder="Tell us more about your goals or questions…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep1()">← Back</button>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <p class="privacy-note" style="text-align:right;">Your information is stored securely.<br>It will never be sold or shared.</p>
+          <button class="btn-next" id="submit-btn" onclick="handleSubmit()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Submit Inquiry
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /all-screens -->
+
+  <!-- SUCCESS -->
+  <div class="success-state" id="success-state">
+    <div class="success-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h3>Thank You for Reaching Out!</h3>
+    <p>A member of the Catholic Energies team will be in touch with you shortly. We look forward to the conversation.</p>
+  </div>
+
+</div>
+
+<script>
+  const MIDDLEWARE = 'https://ce-solar-middleware-c282cb05db3f.herokuapp.com';
+
+  /* ── iframe height ── */
+  function postHeight() {
+    window.parent.postMessage({ type: 'CE_FORM_HEIGHT', height: document.body.scrollHeight }, '*');
+  }
+  window.addEventListener('load', postHeight);
+  window.addEventListener('resize', postHeight);
+  document.addEventListener('click', () => setTimeout(postHeight, 120));
+
+  /* ── State ── */
+  let currentPath = 'energy';
+  let selOrg = null;
+
+  /* ── Phone formatting ── */
+  document.getElementById('phone').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 10);
+    if (v.length >= 7)      v = '(' + v.substring(0,3) + ') ' + v.substring(3,6) + '-' + v.substring(6);
+    else if (v.length >= 4) v = '(' + v.substring(0,3) + ') ' + v.substring(3);
+    else if (v.length >= 1) v = '(' + v;
+    this.value = v;
+  });
+
+  /* ── FIX 2: clear interest error as soon as the user checks anything ── */
+  document.querySelectorAll('input[name="e-interest"], input[name="p-interest"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      document.getElementById('e-interests').style.display = 'none';
+    });
+  });
+
+  /* ── PURPOSE TOGGLE ── */
+  function setPurpose(path) {
+    currentPath = path;
+    document.getElementById('btn-energy').classList.toggle('active', path === 'energy');
+    document.getElementById('btn-partner').classList.toggle('active', path === 'partner');
+    document.getElementById('org-section').style.display = path === 'energy' ? '' : 'none';
+    document.getElementById('partner-org-wrap').style.display = path === 'partner' ? '' : 'none';
+
+    // Reset org state when switching
+    if (path === 'partner') {
+      selOrg = null;
+      document.getElementById('org-results').style.display = 'none';
+      document.getElementById('org-banner').style.display = 'none';
+      showManual(false);
+    }
+    setTimeout(postHeight, 150);
+  }
+
+  /* ── Step nav ── */
+  function updateStepNav(active) {
+    for (let i = 1; i <= 2; i++) {
+      const sn = document.getElementById('sn' + i);
+      const sd = document.getElementById('sd' + i);
+      sn.className = 'step-item' + (i === active ? ' active' : i < active ? ' done' : '');
+      sd.textContent = i < active ? '✓' : i;
+    }
+    document.getElementById('sl1').className = 'step-line' + (active > 1 ? ' done' : '');
+  }
+
+  function goToStep1() {
+    document.getElementById('sc1').classList.add('active');
+    document.getElementById('sc2').classList.remove('active');
+    updateStepNav(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(postHeight, 150);
+  }
+
+  /* ── STEP 1 → STEP 2 ── */
+  function goToStep2() {
+    // Validate contact fields
+    const contactIds = ['first-name', 'last-name', 'email', 'title'];
+    contactIds.forEach(id => document.getElementById(id).classList.remove('field-error'));
+    const missing = contactIds.filter(id => !document.getElementById(id).value.trim());
+    if (missing.length) {
+      missing.forEach(id => markErr(id));
+      document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value.trim())) {
+      markErr('email');
+      document.getElementById('email').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Energy path: validate org
+    if (currentPath === 'energy' && !selOrg) {
+      const instType = document.getElementById('inst-type').value;
+      const instName = document.getElementById('inst-name').value.trim();
+      if (!instType || !instName) {
+        showManual(true);
+        if (!instType) markErr('inst-type');
+        if (!instName) markErr('inst-name');
+        setTimeout(() => document.getElementById(!instType ? 'inst-type' : 'inst-name')
+          .scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        return;
+      }
+    }
+
+    // Update interests panel
+    document.getElementById('energy-interests').style.display  = currentPath === 'energy'  ? '' : 'none';
+    document.getElementById('partner-interests').style.display = currentPath === 'partner' ? '' : 'none';
+    document.getElementById('interests-label').textContent =
+      currentPath === 'partner' ? 'Step 2 — Partnership Interests' : 'Step 2 — Areas of Interest';
+
+    // FIX 2: clear any lingering interest error when arriving at step 2
+    document.getElementById('e-interests').style.display = 'none';
+
+    document.getElementById('sc1').classList.remove('active');
+    document.getElementById('sc2').classList.add('active');
+    updateStepNav(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(postHeight, 150);
+  }
+
+  /* ── ZIP LOOKUP ── */
+  async function doZipLookup() {
+    const zip = document.getElementById('zip').value.trim();
+    document.getElementById('e-zip').style.display = 'none';
+    document.getElementById('e-no-org').style.display = 'none';
+    document.getElementById('org-results').style.display = 'none';
+    document.getElementById('org-banner').style.display = 'none';
+    showManual(false);
+    selOrg = null;
+
+    if (!/^\d{5}$/.test(zip)) { document.getElementById('e-zip').style.display = 'block'; return; }
+
+    const btn = document.getElementById('lookup-btn');
+    btn.innerHTML = '<span class="spin"></span>';
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch(MIDDLEWARE + '/accounts?zip=' + zip);
+      if (!resp.ok) throw new Error('Server error');
+      const data = await resp.json();
+      const accounts = data.accounts || [];
+
+      const list = document.getElementById('org-list');
+      list.innerHTML = '';
+      document.getElementById('org-results').style.display = 'block';
+
+      if (!accounts.length) {
+        document.getElementById('e-no-org').textContent = '⚠ No organizations found for ZIP ' + zip + '. Try a nearby ZIP, or enter your organization manually below.';
+        document.getElementById('e-no-org').style.display = 'block';
+        showManual(true);
+      } else {
+        accounts.forEach(function(acc) {
+          const el = document.createElement('div');
+          el.className = 'acct-item';
+          el.innerHTML = '<div class="acct-name">' + escHtml(acc.name) + '</div>' +
+            (acc.address ? '<div class="acct-sub">' + escHtml(acc.address) + '</div>' : '');
+          el.onclick = function() { doPickOrg(acc, el); };
+          list.appendChild(el);
+        });
+        showManual(true);
+      }
+    } catch(e) {
+      document.getElementById('org-results').style.display = 'block';
+      document.getElementById('e-no-org').textContent = '⚠ Could not reach the server. Please enter your organization manually below.';
+      document.getElementById('e-no-org').style.display = 'block';
+      showManual(true);
+    } finally {
+      btn.innerHTML = 'Look Up';
+      btn.disabled = false;
+    }
+    setTimeout(postHeight, 200);
+  }
+
+  document.getElementById('zip').addEventListener('keydown', e => { if (e.key === 'Enter') doZipLookup(); });
+
+  function doPickOrg(acc, el) {
+    selOrg = acc;
+    document.querySelectorAll('.acct-item').forEach(i => i.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('b-org-name').textContent = acc.name;
+    document.getElementById('b-org-sub').textContent = acc.address || '';
+    document.getElementById('org-results').style.display = 'none';
+    document.getElementById('org-banner').style.display = 'block';
+    showManual(false);
+    setTimeout(postHeight, 150);
+  }
+
+  function doChangeOrg() {
+    selOrg = null;
+    document.getElementById('org-banner').style.display = 'none';
+    document.getElementById('org-results').style.display = 'block';
+    showManual(true);
+    setTimeout(postHeight, 150);
+  }
+
+  function showManual(show) {
+    document.getElementById('manual-divider').style.display = show ? '' : 'none';
+    document.getElementById('manual-section').style.display  = show ? '' : 'none';
+  }
+
+  /* ── SUBMIT ── */
+  function handleSubmit() {
+    /* FIX 2: require at least one interest before doing anything else */
+    const interestField = currentPath === 'energy' ? 'e-interest' : 'p-interest';
+    const errInt = document.getElementById('e-interests');
+    if (!document.querySelectorAll('input[name="' + interestField + '"]:checked').length) {
+      errInt.style.display = 'block';
+      errInt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    errInt.style.display = 'none';
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Submitting…';
+
+    let instType = '', instName = '', orgName = '', sfAccountId = '';
+
+    if (currentPath === 'energy') {
+      if (selOrg) {
+        instType = selOrg.instType || '';
+        instName = selOrg.instName || selOrg.name || '';
+        orgName  = selOrg.name || '';
+        sfAccountId = selOrg.id || '';
+      } else {
+        instType = document.getElementById('inst-type').value;
+        instName = document.getElementById('inst-name').value.trim();
+        orgName  = document.getElementById('org-name').value.trim();
+      }
+    } else {
+      orgName  = document.getElementById('partner-org').value.trim();
+      instName = orgName;
+    }
+
+    const interests = currentPath === 'energy'
+      ? [...document.querySelectorAll('input[name="e-interest"]:checked')].map(el => el.value)
+      : [...document.querySelectorAll('input[name="p-interest"]:checked')].map(el => el.value);
+
+    const rawPhone = document.getElementById('phone').value.replace(/\D/g, '');
+
+    const payload = {
+      path:        currentPath,
+      firstName:   document.getElementById('first-name').value.trim(),
+      lastName:    document.getElementById('last-name').value.trim(),
+      email:       document.getElementById('email').value.trim(),
+      phone:       rawPhone,
+      title:       document.getElementById('title').value.trim(),
+      instType, instName, orgName, sfAccountId,
+      interests,
+      notes:       document.getElementById('notes').value.trim(),
+    };
+
+    fetch(MIDDLEWARE + '/leads', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    })
+    .then(res => { if (!res.ok) throw new Error('Server error ' + res.status); return res.json(); })
+    .then(() => {
+      document.getElementById('all-screens').style.display = 'none';
+      document.getElementById('step-nav').style.display = 'none';
+      document.getElementById('success-state').classList.add('show');
+      setTimeout(postHeight, 100);
+    })
+    .catch(err => {
+      console.error('Submit error:', err);
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Try Again';
+      alert('Something went wrong. Please try again or email info@catholicenergies.org');
+    });
+  }
+
+  /* ── Helpers ── */
+  function markErr(id) {
+    const el = document.getElementById(id);
+    el.classList.add('field-error');
+    el.addEventListener('input',  () => el.classList.remove('field-error'), { once: true });
+    el.addEventListener('change', () => el.classList.remove('field-error'), { once: true });
+  }
+
+  function escHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
