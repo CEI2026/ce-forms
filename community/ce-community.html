@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CE Community Interest Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --amber:#F7A91E; --amber-dark:#D98A00; --orange:#E05C00;
+      --charcoal:#3D3D3D; --charcoal-lt:#5A5A5A; --green:#2E7D32;
+      --white:#FFFFFF; --off-white:#F5F5F5; --border:#E0E0E0; --border-lt:#EBEBEB;
+      --text:#2A2A2A; --text-mid:#555555; --text-lt:#909090; --error:#C62828;
+      --bg:#F8F8F6; --radius:8px; --radius-lg:14px;
+      --shadow:0 2px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Barlow',sans-serif; background:var(--bg); color:var(--text); padding:32px 16px 48px; }
+    .form-card { background:var(--white); border-radius:var(--radius-lg); box-shadow:var(--shadow); max-width:100%; margin:0 auto; overflow:hidden; }
+    .form-card::before { content:''; display:block; height:4px; background:linear-gradient(90deg,var(--orange),var(--amber)); }
+    .form-card-header { padding:28px 44px 20px; border-bottom:1px solid var(--border-lt); text-align:center; }
+    .form-card-header h2 { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:700; color:var(--charcoal); text-transform:uppercase; letter-spacing:0.03em; line-height:1.25; margin-bottom:6px; }
+    .req-note { display:inline-block; margin-top:8px; font-size:14px; color:var(--text-lt); }
+    .req-note .star { color:var(--error); }
+
+    .step-nav { display:flex; align-items:center; padding:14px 44px; background:var(--off-white); border-bottom:1px solid var(--border-lt); }
+    .step-item { display:flex; align-items:center; gap:7px; flex:1; font-size:14px; font-weight:600; color:var(--text-lt); white-space:nowrap; letter-spacing:0.03em; }
+    .step-item.active { color:var(--orange); }
+    .step-item.done { color:var(--green); }
+    .step-dot { width:22px; height:22px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; transition:all 0.2s; color:var(--text-lt); background:var(--white); }
+    .step-item.active .step-dot { background:linear-gradient(135deg,var(--orange),var(--amber)); border-color:transparent; color:var(--white); }
+    .step-item.done .step-dot { background:var(--green); border-color:var(--green); color:var(--white); }
+    .step-line { flex:0 0 20px; height:2px; background:var(--border); margin:0 2px; }
+    .step-line.done { background:var(--green); }
+
+    .screen { display:none; }
+    .screen.active { display:block; }
+    .form-body { padding:0 44px 32px; }
+    .form-section { margin-top:26px; padding-top:26px; border-top:1px solid var(--border-lt); }
+    .form-section:first-child { border-top:none; padding-top:28px; margin-top:0; }
+    .section-label { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--orange); margin-bottom:14px; }
+    .section-intro { font-size:19px; color:var(--text-mid); margin-bottom:14px; line-height:1.5; }
+
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+    .field-row.full { grid-template-columns:1fr; }
+    .field-row.title-name { grid-template-columns:120px 1fr; }
+    .field-group { display:flex; flex-direction:column; gap:5px; }
+    .field-group label { font-size:16px; font-weight:600; color:var(--charcoal-lt); text-transform:uppercase; letter-spacing:0.04em; }
+    .req { color:var(--error); margin-left:2px; }
+    .field-group input, .field-group select, .field-group textarea {
+      font-family:'Barlow',sans-serif; font-size:20px; color:var(--text); background:var(--white);
+      border:1.5px solid var(--border); border-radius:var(--radius); padding:15px 18px; width:100%; outline:none; appearance:none;
+      transition:border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-group input::placeholder, .field-group textarea::placeholder { color:#C0C0C0; }
+    .field-group input:focus, .field-group select:focus, .field-group textarea:focus { border-color:var(--amber); box-shadow:0 0 0 3px rgba(247,169,30,0.15); }
+    .field-group select {
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23909090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center; padding-right:34px; cursor:pointer;
+    }
+    .field-note { font-size:14.5px; color:var(--text-lt); line-height:1.5; }
+    .field-error { border-color:var(--error) !important; box-shadow:0 0 0 3px rgba(198,40,40,0.10) !important; }
+
+    /* combobox */
+    .combo { position:relative; }
+    .combo-results { position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30; background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); max-height:280px; overflow-y:auto; box-shadow:var(--shadow); display:none; }
+    .combo-results.show { display:block; }
+    .combo-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border-lt); }
+    .combo-item:last-child { border-bottom:none; }
+    .combo-item:hover, .combo-item.active { background:#FFF8EE; }
+    .combo-name { font-weight:600; font-size:19px; color:var(--text); }
+    .combo-sub { font-size:15px; color:var(--text-mid); margin-top:1px; }
+    .combo-empty { padding:14px 16px; font-size:16px; color:var(--text-lt); line-height:1.5; }
+
+    .sel-banner { padding:12px 14px; background:#FFF3E0; border:1.5px solid var(--amber); border-radius:var(--radius); display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .sel-banner-info strong { font-size:14px; font-weight:700; color:var(--orange); display:block; }
+    .sel-banner-info span { font-size:12px; color:var(--text-mid); }
+    .chg-link { font-size:12px; color:var(--orange); text-decoration:underline; cursor:pointer; font-weight:600; white-space:nowrap; }
+    .link-btn { background:none; border:none; color:var(--orange); font-size:12.5px; font-weight:600; text-decoration:underline; cursor:pointer; padding:0; margin-top:10px; font-family:inherit; display:inline-block; }
+
+    .a-err { padding:10px 13px; background:#FDECEA; border:1px solid #f5b4b4; border-radius:var(--radius); font-size:13px; color:var(--error); font-weight:600; display:none; margin-top:10px; }
+
+    .checkbox-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .check-item { display:flex; align-items:flex-start; gap:9px; padding:9px 11px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:var(--off-white); transition:border-color 0.15s, background 0.15s; user-select:none; }
+    .check-item input[type="checkbox"] { margin-top:2px; accent-color:var(--orange); flex-shrink:0; width:18px; height:18px; cursor:pointer; }
+    .check-item span { font-size:18px; line-height:1.4; color:var(--text-mid); font-weight:500; }
+    .check-item:has(input:checked) { border-color:var(--amber); background:#FFFBF2; }
+    .check-item:has(input:checked) span { color:var(--orange); }
+
+    .step-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:20px 44px 28px; border-top:1px solid var(--border-lt); }
+    .btn-back { font-family:'Barlow',sans-serif; font-size:17px; font-weight:600; color:var(--text-mid); background:transparent; border:1.5px solid var(--border); padding:12px 24px; border-radius:var(--radius); cursor:pointer; transition:border-color 0.15s, color 0.15s; }
+    .btn-back:hover { border-color:var(--charcoal-lt); color:var(--charcoal); }
+    .btn-next { display:inline-flex; align-items:center; gap:7px; font-family:'Barlow',sans-serif; font-size:19px; font-weight:700; color:var(--white); background:var(--amber); border:none; padding:14px 32px; border-radius:var(--radius); cursor:pointer; letter-spacing:0.02em; transition:background 0.18s, transform 0.1s; }
+    .btn-next:hover { background:var(--amber-dark); }
+    .btn-next:active { transform:scale(0.98); }
+    .btn-next:disabled { opacity:0.65; cursor:not-allowed; transform:none; }
+    .privacy-note { font-size:14px; color:var(--text-lt); line-height:1.6; }
+
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+
+    .success-state { display:none; text-align:center; padding:56px 36px; }
+    .success-state.show { display:block; }
+    .success-ring { width:68px; height:68px; border-radius:50%; background:#FFFBF2; border:2px solid var(--amber); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; }
+    .success-ring svg { color:var(--orange); width:32px; height:32px; }
+    .success-state h3 { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--charcoal); margin-bottom:10px; }
+    .success-state p { font-size:19px; color:var(--text-mid); line-height:1.7; max-width:480px; margin:0 auto; }
+
+    @media (max-width:580px) {
+      body { padding:16px 8px 32px; }
+      .form-card-header, .form-body { padding-left:18px; padding-right:18px; }
+      .step-actions { padding:16px 18px 22px; flex-direction:column; align-items:stretch; }
+      .btn-next, .btn-back { width:100%; justify-content:center; }
+      .field-row, .field-row.title-name { grid-template-columns:1fr; }
+      .checkbox-grid { grid-template-columns:1fr; }
+      .step-nav { padding:10px 14px; }
+      .step-item { font-size:9.5px; gap:4px; }
+      .step-dot { width:20px; height:20px; font-size:10px; }
+      .step-line { flex:0 0 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-card">
+
+  <div class="form-card-header">
+    <h2>Connect Your Community</h2>
+    <p style="font-size:19px;color:var(--text-mid);margin-top:4px;">Tell us about your religious community and how Catholic Energies can help.</p>
+    <span class="req-note"><span class="star">*</span> Indicates required field</span>
+  </div>
+
+  <div class="step-nav" id="step-nav">
+    <div class="step-item active" id="sn1"><div class="step-dot" id="sd1">1</div><span>About You</span></div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-item" id="sn2"><div class="step-dot" id="sd2">2</div><span>Interests</span></div>
+  </div>
+
+  <div id="all-screens">
+
+    <!-- SCREEN 1 -->
+    <div class="screen active" id="sc1">
+      <div class="form-body">
+
+        <div class="form-section">
+          <div class="section-label">Your Community</div>
+          <p class="section-intro">Find your religious institute or congregation. If your community is not displayed, you may enter it manually.</p>
+
+          <!-- LOOKUP -->
+          <div class="field-group" id="lookup-wrap">
+            <label>Find Your Community <span class="req">*</span></label>
+            <div class="combo">
+              <input type="text" id="community-search" autocomplete="off" placeholder="Start typing a name or initials &mdash; e.g. Trappists, S.J." />
+              <div class="combo-results" id="community-results"></div>
+            </div>
+            <span class="field-note">Search by full name, common name, or post-nominal initials.</span>
+          </div>
+
+          <!-- SELECTED BANNER -->
+          <div id="community-banner" style="display:none;">
+            <div class="sel-banner">
+              <div class="sel-banner-info">
+                <strong id="b-comm-name">&mdash;</strong>
+                <span id="b-comm-sub"></span>
+              </div>
+              <span class="chg-link" onclick="clearCommunity()">Change</span>
+            </div>
+          </div>
+
+          <button type="button" class="link-btn" id="manual-toggle" onclick="showManual()">My community isn&rsquo;t listed &mdash; enter it manually</button>
+
+          <!-- MANUAL FALLBACK -->
+          <div id="manual-community" style="display:none;margin-top:14px;">
+            <div class="field-row">
+              <div class="field-group">
+                <label>Community Type <span class="req">*</span></label>
+                <select id="inst-type">
+                  <option value="">&mdash; Select &mdash;</option>
+                  <option value="Men's religious institute">Men&rsquo;s religious institute</option>
+                  <option value="Women's religious institute">Women&rsquo;s religious institute</option>
+                  <option value="Other / PJP">Other / PJP</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Community Name <span class="req">*</span></label>
+                <input type="text" id="inst-name" placeholder="e.g. Sisters of Providence" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">About You</div>
+          <div class="field-row title-name">
+            <div class="field-group">
+              <label>Title <span class="req">*</span></label>
+              <select id="honorific">
+                <option value="">&mdash;</option>
+                <option value="Sr.">Sr.</option>
+                <option value="Fr.">Fr.</option>
+                <option value="Bro.">Bro.</option>
+                <option value="Rev.">Rev.</option>
+                <option value="Dcn.">Dcn.</option>
+                <option value="Msgr.">Msgr.</option>
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Ms.">Ms.</option>
+                <option value="Dr.">Dr.</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>First Name <span class="req">*</span></label>
+              <input type="text" id="first-name" placeholder="Mary" autocomplete="given-name" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Last Name <span class="req">*</span></label>
+              <input type="text" id="last-name" placeholder="Sullivan" autocomplete="family-name" />
+            </div>
+            <div class="field-group">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" id="email" placeholder="mary@congregation.org" autocomplete="email" />
+            </div>
+          </div>
+          <div class="field-row full">
+            <div class="field-group">
+              <label>Role <span class="req">*</span></label>
+              <input type="text" id="role" placeholder="e.g. Treasurer, Facilities Director" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="step-actions">
+        <span></span>
+        <button class="btn-next" onclick="goToStep2()">
+          Continue &mdash; Areas of Interest
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2 -->
+    <div class="screen" id="sc2">
+      <div class="form-body">
+        <div class="form-section">
+          <div class="section-label">Areas of Interest</div>
+          <p class="section-intro" style="font-weight:500;">Select all that apply.</p>
+          <div class="checkbox-grid">
+            <label class="check-item"><input type="checkbox" name="interest" value="Renewables and Storage" /><span>Renewables and Storage</span></label>
+            <label class="check-item"><input type="checkbox" name="interest" value="Energy Analysis and Efficiency" /><span>Energy Analysis and Efficiency</span></label>
+            <label class="check-item"><input type="checkbox" name="interest" value="Clean Energy Procurement" /><span>Clean Energy Procurement</span></label>
+            <label class="check-item"><input type="checkbox" name="interest" value="Net Zero Planning" /><span>Net Zero Planning</span></label>
+            <label class="check-item" style="grid-column:1/-1;"><input type="checkbox" name="interest" value="Carbon Drawdown and Reforestation" /><span>Carbon Drawdown and Reforestation</span></label>
+          </div>
+          <div class="a-err" id="e-interests">Please select at least one area of interest to continue.</div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">Additional Notes</div>
+          <div class="field-group">
+            <label>Anything else you&rsquo;d like us to know?</label>
+            <textarea id="notes" rows="4" placeholder="Tell us more about your community&rsquo;s goals or questions&hellip;"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep1()">&larr; Back</button>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <p class="privacy-note" style="text-align:right;">Your information is stored securely.<br>It will never be sold or shared.</p>
+          <button class="btn-next" id="submit-btn" onclick="handleSubmit()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="success-state" id="success-state">
+    <div class="success-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h3>Thank You for Reaching Out!</h3>
+    <p>A member of the Catholic Energies team will be in touch with you shortly. We look forward to the conversation.</p>
+  </div>
+
+</div>
+
+<script>
+  /* Interim: posts to a Google Apps Script Web App that appends a row to a
+     Google Sheet. Replace the placeholder with YOUR deployed /exec URL. */
+  const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzxl0o4i4PFGQexfNUd-rC5dWR3iLmAwMhKNs4l6bCbv4zcGlWM35TtYsJPGn1bJD0n/exec';
+
+  /* Religious institutes from the OCD v10.1 EI Authority Master (Men's,
+     Women's, Other/PJP). Fields: id, n(ame), c(ommon), p(ost-nominal),
+     t(ype: M/W/O), a(liases). Diocese records are intentionally excluded. */
+  const COMMUNITIES = [{"id":"W020","n":"Adorers of the Blood of Christ","c":"","p":"","t":"W","a":""},{"id":"M001","n":"Alexian Brothers","c":"","p":"","t":"M","a":"Alexian Brothers (via email domain)"},{"id":"W021","n":"Apostles of the Sacred Heart","c":"","p":"","t":"W","a":"Apostles of the Sacred Heart (via email domain)"},{"id":"W103","n":"Apostles of the Sacred Heart of Jesus (A.S.C.J.)","c":"","p":"A.S.C.J.","t":"W","a":""},{"id":"M002","n":"Augustinians","c":"","p":"","t":"M","a":"Augustinians (family — verify province)"},{"id":"W022","n":"Benedictine Sisters","c":"","p":"","t":"W","a":""},{"id":"W015","n":"Benedictine Sisters of St. Scholastica Monastery, Duluth","c":"","p":"","t":"W","a":"Benedictine Sisters of St. Scholastica Monastery, Duluth (via Benedictine Living Communities)"},{"id":"W023","n":"Benedictines","c":"","p":"","t":"W","a":"Benedictines (family — verify province) | Benedictines (via email domain)"},{"id":"W024","n":"Bernardine Franciscan Sisters","c":"","p":"","t":"W","a":""},{"id":"W025","n":"Blessed Sacrament sisters","c":"","p":"","t":"W","a":"Blessed Sacrament sisters (family — verify province)"},{"id":"P004","n":"Bon Secours Mercy Health","c":"","p":"","t":"O","a":""},{"id":"M003","n":"Brothers of the Sacred Heart","c":"","p":"","t":"M","a":""},{"id":"M004","n":"Canons Regular","c":"","p":"","t":"M","a":"Canons Regular (via email domain)"},{"id":"M005","n":"Canons Regular of the Order of the Holy Cross (Crosiers)","c":"Crosiers","p":"","t":"M","a":""},{"id":"W026","n":"Canossian Sisters","c":"","p":"","t":"W","a":"Canossian Sisters (via email domain)"},{"id":"M069","n":"Capuchin Franciscans, Province of St. Mary (OFM Cap.)","c":"","p":"OFM Cap.","t":"M","a":""},{"id":"W027","n":"Carmelite Sisters of the Aged and Infirm","c":"","p":"","t":"W","a":""},{"id":"M006","n":"Carmelites","c":"","p":"","t":"M","a":"Carmelites (family — verify province)"},{"id":"W028","n":"Carmelites","c":"","p":"","t":"W","a":"Carmelites (family — verify province) | Carmelites (via email domain)"},{"id":"M007","n":"Catholic Foreign Mission Society (Maryknoll Fathers & Brothers)","c":"Maryknoll Fathers & Brothers","p":"","t":"M","a":""},{"id":"P005","n":"Centura Health (PJP)","c":"","p":"PJP","t":"O","a":""},{"id":"M009","n":"Clerics of St. Viator (C.S.V.)","c":"","p":"C.S.V.","t":"M","a":""},{"id":"M008","n":"Clerics Regular of St. Paul (Barnabites)","c":"Barnabites","p":"","t":"M","a":""},{"id":"M066","n":"Columban Fathers (S.S.C.)","c":"","p":"S.S.C.","t":"M","a":""},{"id":"M010","n":"Comboni Missionaries","c":"","p":"","t":"M","a":"Comboni Missionaries (confirm branch)"},{"id":"M011","n":"Comboni Missionaries of the Heart of Jesus","c":"","p":"","t":"M","a":""},{"id":"W001","n":"Comboni Missionary Sisters","c":"","p":"","t":"W","a":""},{"id":"P006","n":"CommonSpirit Health","c":"","p":"","t":"O","a":""},{"id":"P007","n":"CommonSpirit Health (PJP)","c":"","p":"PJP","t":"O","a":""},{"id":"M013","n":"Congregation of Christian Brothers","c":"","p":"","t":"M","a":""},{"id":"W029","n":"Congregation of Divine Providence","c":"","p":"","t":"W","a":""},{"id":"M014","n":"Congregation of Holy Cross","c":"","p":"","t":"M","a":"Congregation of Holy Cross (family — verify province)"},{"id":"W030","n":"Congregation of Holy Cross","c":"","p":"","t":"W","a":"Congregation of Holy Cross (family — verify province)"},{"id":"M015","n":"Congregation of Holy Cross (C.S.C.)","c":"","p":"C.S.C.","t":"M","a":""},{"id":"M016","n":"Congregation of St. Basil (Basilians)","c":"Basilians","p":"","t":"M","a":""},{"id":"W031","n":"Congregation of the Humility of Mary","c":"","p":"","t":"W","a":""},{"id":"M017","n":"Congregation of the Mission (Vincentians)","c":"Vincentians","p":"","t":"M","a":""},{"id":"M019","n":"Congregation of the Missionaries of St. Charles (Scalabrinians)","c":"Scalabrinians","p":"","t":"M","a":""},{"id":"M020","n":"Congregation of the Most Holy Redeemer (Redemptorists)","c":"Redemptorists","p":"","t":"M","a":""},{"id":"M021","n":"Congregation of the Passion (Passionists)","c":"Passionists","p":"","t":"M","a":""},{"id":"W005","n":"Congregation of the Passion (Passionists)","c":"Passionists","p":"","t":"W","a":"Congregation of the Passion (Passionists) — women's branch"},{"id":"M022","n":"Congregation of the Resurrection (C.R.)","c":"","p":"C.R.","t":"M","a":""},{"id":"W032","n":"Consolata Missionaries","c":"","p":"","t":"W","a":"Consolata Missionaries (via email domain)"},{"id":"W033","n":"Daughters of Charity of St. Vincent de Paul","c":"","p":"","t":"W","a":""},{"id":"W104","n":"Daughters of Divine Charity/Love (confirm)","c":"confirm","p":"","t":"W","a":""},{"id":"W105","n":"Daughters of Mary","c":"","p":"","t":"W","a":"Daughters of Mary (confirm congregation)"},{"id":"W106","n":"Daughters of St. Paul (F.S.P.)","c":"","p":"F.S.P.","t":"W","a":""},{"id":"W034","n":"Daughters of Wisdom","c":"","p":"","t":"W","a":"Daughters of Wisdom (via email domain)"},{"id":"M023","n":"De La Salle Christian Brothers","c":"","p":"","t":"M","a":"De La Salle Christian Brothers (family — verify province) | De La Salle Christian Brothers (via email domain)"},{"id":"W035","n":"Discalced Carmelite Nuns / Carmelite Sisters","c":"","p":"","t":"W","a":""},{"id":"W036","n":"Dominican (order)","c":"order","p":"","t":"W","a":"Dominican (order) (via email domain)"},{"id":"M024","n":"Dominican family","c":"","p":"","t":"M","a":"Dominican family (family — verify province)"},{"id":"W039","n":"Dominican family","c":"","p":"","t":"W","a":"Dominican family (family — verify province)"},{"id":"W037","n":"Dominican Sisters","c":"","p":"","t":"W","a":""},{"id":"W038","n":"Dominican Sisters of Mary","c":"","p":"","t":"W","a":""},{"id":"P002","n":"Equestrian Order of the Holy Sepulchre (papal lay order)","c":"papal lay order","p":"","t":"O","a":""},{"id":"W041","n":"Felician Sisters","c":"","p":"","t":"W","a":"Felician Sisters (via email domain)"},{"id":"W040","n":"Felician Sisters (CSSF)","c":"","p":"CSSF","t":"W","a":""},{"id":"M028","n":"Franciscan family","c":"","p":"","t":"M","a":"Franciscan family (family — verify province)"},{"id":"W044","n":"Franciscan family","c":"","p":"","t":"W","a":"Franciscan family (family — verify province)"},{"id":"M026","n":"Franciscan Friars","c":"","p":"","t":"M","a":"Franciscan Friars (via email domain)"},{"id":"M025","n":"Franciscan Friars (OFM)","c":"","p":"OFM","t":"M","a":""},{"id":"M027","n":"Franciscan Friars, Holy Name Province","c":"","p":"","t":"M","a":""},{"id":"W102","n":"Franciscan Missionaries of Mary (F.M.M.)","c":"","p":"F.M.M.","t":"W","a":""},{"id":"W042","n":"Franciscan Sisters","c":"","p":"","t":"W","a":"Franciscan Sisters (via email domain)"},{"id":"W101","n":"Franciscan Sisters of Chicago","c":"","p":"","t":"W","a":"Franciscan Sisters of Chicago (via Franciscan Ministries)"},{"id":"W043","n":"Franciscan Sisters of Perpetual Adoration (FSPA)","c":"","p":"FSPA","t":"W","a":""},{"id":"M029","n":"Glenmary Home Missioners","c":"","p":"","t":"M","a":""},{"id":"W006","n":"Glenmary Home Missioners","c":"","p":"","t":"W","a":"Glenmary Home Missioners — women's branch"},{"id":"M030","n":"Institute of the Brothers of the Christian Schools","c":"","p":"","t":"M","a":""},{"id":"W045","n":"Institute of the Incarnate Word","c":"","p":"","t":"W","a":"Institute of the Incarnate Word (via email domain)"},{"id":"M063","n":"Josephites (S.S.J.)","c":"","p":"S.S.J.","t":"M","a":""},{"id":"M031","n":"Legionaries of Christ (L.C.)","c":"","p":"L.C.","t":"M","a":""},{"id":"W046","n":"Little Sisters of the Poor","c":"","p":"","t":"W","a":""},{"id":"W047","n":"Marian Sisters","c":"","p":"","t":"W","a":""},{"id":"M032","n":"Marist Brothers of the Schools","c":"","p":"","t":"M","a":""},{"id":"W048","n":"Marists","c":"","p":"","t":"W","a":"Marists (family — verify province)"},{"id":"W049","n":"Maryknoll Sisters","c":"","p":"","t":"W","a":""},{"id":"W050","n":"Medical Mission Sisters","c":"","p":"","t":"W","a":""},{"id":"M033","n":"Mercedarian Friars","c":"","p":"","t":"M","a":""},{"id":"W012","n":"Mercedarian Missionaries of Berriz (M.M.B.)","c":"","p":"M.M.B.","t":"W","a":""},{"id":"W052","n":"Missionaries of Charity","c":"","p":"","t":"W","a":""},{"id":"W051","n":"Missionaries of Charity (M.C.)","c":"","p":"M.C.","t":"W","a":""},{"id":"M034","n":"Missionaries of the Precious Blood (C.PP.S.)","c":"","p":"C.PP.S.","t":"M","a":""},{"id":"M035","n":"Missionary Oblates of Mary Immaculate (O.M.I.)","c":"","p":"O.M.I.","t":"M","a":""},{"id":"W107","n":"Missionary Sisters of Christ the King","c":"","p":"","t":"W","a":""},{"id":"W002","n":"Missionary Sisters of St. Charles Borromeo (Scalabrinians)","c":"Scalabrinians","p":"","t":"W","a":""},{"id":"W108","n":"Missionary Sisters of the Immaculate Conception","c":"","p":"","t":"W","a":""},{"id":"W053","n":"Missionary Sisters of the Sacred Heart","c":"","p":"","t":"W","a":""},{"id":"M037","n":"Missionary Society of St. Paul the Apostle (Paulists)","c":"Paulists","p":"","t":"M","a":""},{"id":"W007","n":"Missionary Sons of the Immaculate Heart of Mary (Claretians)","c":"Claretians","p":"","t":"W","a":"Missionary Sons of the Immaculate Heart of Mary (Claretians) — women's branch"},{"id":"M012","n":"Montfort Missionaries (Company of Mary, S.M.M.)","c":"Company of Mary, S.M.M.","p":"","t":"M","a":""},{"id":"W054","n":"Notre Dame Sisters","c":"","p":"","t":"W","a":"Notre Dame Sisters (via email domain)"},{"id":"W055","n":"Notre Dame sisters","c":"","p":"","t":"W","a":"Notre Dame sisters (family — verify province)"},{"id":"W003","n":"Oblate Sisters of the Most Holy Redeemer","c":"","p":"","t":"W","a":""},{"id":"M068","n":"Oblates of St. Francis de Sales (O.S.F.S.)","c":"","p":"O.S.F.S.","t":"M","a":""},{"id":"M038","n":"Order of Augustinian Recollects","c":"","p":"","t":"M","a":""},{"id":"W008","n":"Order of Augustinian Recollects","c":"","p":"","t":"W","a":"Order of Augustinian Recollects — women's branch"},{"id":"M039","n":"Order of Carmelites","c":"","p":"","t":"M","a":""},{"id":"W009","n":"Order of Cistercians","c":"","p":"","t":"W","a":"Order of Cistercians — women's branch"},{"id":"M040","n":"Order of Cistercians of the Strict Observance (Trappists)","c":"Trappists","p":"","t":"M","a":""},{"id":"W010","n":"Order of Cistercians of the Strict Observance (Trappists)","c":"Trappists","p":"","t":"W","a":"Order of Cistercians of the Strict Observance (Trappists) — women's branch"},{"id":"M041","n":"Order of Clerics Regular (Theatines)","c":"Theatines","p":"","t":"M","a":""},{"id":"W011","n":"Order of Clerics Regular (Theatines)","c":"Theatines","p":"","t":"W","a":"Order of Clerics Regular (Theatines) — women's branch"},{"id":"M042","n":"Order of Discalced Carmelites","c":"","p":"","t":"M","a":""},{"id":"M043","n":"Order of Friar Servants of Mary (Servites)","c":"Servites","p":"","t":"M","a":""},{"id":"M044","n":"Order of Friars Minor (Franciscans)","c":"Franciscans","p":"","t":"M","a":""},{"id":"M045","n":"Order of Friars Minor Capuchin","c":"","p":"","t":"M","a":""},{"id":"M046","n":"Order of Friars Minor Conventual","c":"","p":"","t":"M","a":""},{"id":"M047","n":"Order of Our Lady of Mercy (Mercedarians)","c":"Mercedarians","p":"","t":"M","a":""},{"id":"M048","n":"Order of Preachers (Dominicans)","c":"Dominicans","p":"","t":"M","a":""},{"id":"W013","n":"Order of Preachers (Dominicans)","c":"Dominicans","p":"","t":"W","a":"Order of Preachers (Dominicans) — women's branch"},{"id":"M049","n":"Order of Premonstratensians (Norbertines)","c":"Norbertines","p":"","t":"M","a":""},{"id":"W014","n":"Order of Premonstratensians (Norbertines)","c":"Norbertines","p":"","t":"W","a":"Order of Premonstratensians (Norbertines) — women's branch"},{"id":"M050","n":"Order of St. Augustine (Augustinians)","c":"Augustinians","p":"","t":"M","a":""},{"id":"M051","n":"Order of St. Benedict (Benedictines)","c":"Benedictines","p":"","t":"M","a":""},{"id":"W056","n":"Pallottine Missionary Sisters","c":"","p":"","t":"W","a":""},{"id":"M058","n":"Pallottines (S.A.C.)","c":"","p":"S.A.C.","t":"M","a":""},{"id":"M052","n":"Paulist Fathers","c":"","p":"","t":"M","a":"Paulist Fathers (via email domain)"},{"id":"M036","n":"Paulist Fathers (C.S.P.)","c":"","p":"C.S.P.","t":"M","a":""},{"id":"P008","n":"PeaceHealth (PJP)","c":"","p":"PJP","t":"O","a":""},{"id":"P009","n":"Personal Prelature","c":"","p":"","t":"O","a":"Personal Prelature (confirm; e.g. Opus Dei)"},{"id":"P010","n":"Personal Prelature (e.g. Opus Dei) — confirm","c":"","p":"","t":"O","a":""},{"id":"P003","n":"Personal Prelature of Opus Dei","c":"","p":"","t":"O","a":""},{"id":"M065","n":"Piarist Fathers (Sch.P.)","c":"","p":"Sch.P.","t":"M","a":""},{"id":"W057","n":"Pious Disciples of the Divine Master","c":"","p":"","t":"W","a":"Pious Disciples of the Divine Master (family — verify province)"},{"id":"W058","n":"Poor Clares","c":"","p":"","t":"W","a":""},{"id":"W059","n":"Poor Clares (Franciscan)","c":"Franciscan","p":"","t":"W","a":"Poor Clares (Franciscan) (family — verify province)"},{"id":"W060","n":"Poor Clares (Rochester Franciscan)","c":"Rochester Franciscan","p":"","t":"W","a":""},{"id":"W061","n":"Precious Blood","c":"","p":"","t":"W","a":"Precious Blood (family — verify province)"},{"id":"M064","n":"Priests of the Sacred Heart (S.C.J.)","c":"","p":"S.C.J.","t":"M","a":""},{"id":"P011","n":"Providence St. Joseph Health (PJP)","c":"","p":"PJP","t":"O","a":""},{"id":"P012","n":"Public juridic person — system pending","c":"","p":"","t":"O","a":""},{"id":"W004","n":"Redemptoristine Nuns","c":"","p":"","t":"W","a":""},{"id":"W063","n":"Religious of Jesus and Mary (R.J.M.)","c":"","p":"R.J.M.","t":"W","a":""},{"id":"W064","n":"Religious of the Sacred Heart of Mary","c":"","p":"","t":"W","a":""},{"id":"W062","n":"Religious Teachers Filippini","c":"","p":"","t":"W","a":"Religious Teachers Filippini (via email domain)"},{"id":"M067","n":"Rogationists (R.C.J.)","c":"","p":"R.C.J.","t":"M","a":""},{"id":"W065","n":"Salesian Sisters","c":"","p":"","t":"W","a":"Salesian Sisters (via email domain)"},{"id":"W016","n":"Salesians of Don Bosco","c":"","p":"","t":"W","a":"Salesians of Don Bosco (via email domain) — women's branch | Salesians of Don Bosco — women's branch"},{"id":"M053","n":"Salesians of Don Bosco (S.D.B.)","c":"","p":"S.D.B.","t":"M","a":""},{"id":"M018","n":"Scalabrinians (C.S.)","c":"","p":"C.S.","t":"M","a":""},{"id":"W066","n":"School Sisters (verify)","c":"verify","p":"","t":"W","a":"School Sisters (verify) (family — verify province)"},{"id":"W067","n":"School Sisters of Notre Dame","c":"","p":"","t":"W","a":""},{"id":"W068","n":"School Sisters of St. Francis","c":"","p":"","t":"W","a":""},{"id":"W069","n":"Servites","c":"","p":"","t":"W","a":"Servites (family — verify province)"},{"id":"W070","n":"Sisters of Bon Secours","c":"","p":"","t":"W","a":""},{"id":"W071","n":"Sisters of Charity","c":"","p":"","t":"W","a":"Sisters of Charity (via email domain)"},{"id":"W072","n":"Sisters of Christian Charity","c":"","p":"","t":"W","a":""},{"id":"W073","n":"Sisters of Life","c":"","p":"","t":"W","a":"Sisters of Life (via email domain)"},{"id":"W074","n":"Sisters of Loretto","c":"","p":"","t":"W","a":""},{"id":"W075","n":"Sisters of Mercy","c":"","p":"","t":"W","a":"Sisters of Mercy (family — verify province) | Sisters of Mercy (via email domain)"},{"id":"W076","n":"Sisters of Notre Dame","c":"","p":"","t":"W","a":""},{"id":"W077","n":"Sisters of Notre Dame de Namur","c":"","p":"","t":"W","a":""},{"id":"W078","n":"Sisters of Providence","c":"","p":"","t":"W","a":""},{"id":"W079","n":"Sisters of St. Francis / Franciscan Sisters","c":"","p":"","t":"W","a":""},{"id":"W080","n":"Sisters of St. Joseph","c":"","p":"","t":"W","a":"Sisters of St. Joseph (family — verify province) | Sisters of St. Joseph (via email domain)"},{"id":"W081","n":"Sisters of St. Joseph (CSJ/SSJ)","c":"CSJ/SSJ","p":"","t":"W","a":""},{"id":"W109","n":"Sisters of St. Mary","c":"","p":"","t":"W","a":"Sisters of St. Mary (confirm congregation)"},{"id":"W082","n":"Sisters of St. Paul de Chartres","c":"","p":"","t":"W","a":""},{"id":"W083","n":"Sisters of the Assumption","c":"","p":"","t":"W","a":""},{"id":"W084","n":"Sisters of the Blessed Sacrament","c":"","p":"","t":"W","a":""},{"id":"W085","n":"Sisters of the Good Shepherd","c":"","p":"","t":"W","a":""},{"id":"W086","n":"Sisters of the Holy Cross","c":"","p":"","t":"W","a":""},{"id":"W087","n":"Sisters of the Holy Family of Nazareth","c":"","p":"","t":"W","a":""},{"id":"W088","n":"Sisters of the Holy Names of Jesus and Mary","c":"","p":"","t":"W","a":""},{"id":"W089","n":"Sisters of the Holy Spirit","c":"","p":"","t":"W","a":""},{"id":"W090","n":"Sisters of the Immaculate Heart of Mary","c":"","p":"","t":"W","a":"Sisters of the Immaculate Heart of Mary (family — verify province) | Sisters of the Immaculate Heart of Mary (via email domain)"},{"id":"W091","n":"Sisters of the Incarnate Word","c":"","p":"","t":"W","a":"Sisters of the Incarnate Word (via email domain)"},{"id":"W092","n":"Sisters of the Presentation of the BVM","c":"","p":"","t":"W","a":""},{"id":"W093","n":"Sisters of the Sacred Heart","c":"","p":"","t":"W","a":""},{"id":"W094","n":"Sisters of the Sacred Hearts","c":"","p":"","t":"W","a":""},{"id":"W095","n":"Sisters of the Sorrowful Mother","c":"","p":"","t":"W","a":""},{"id":"W096","n":"Sisters of the Visitation","c":"","p":"","t":"W","a":""},{"id":"W110","n":"Society of Helpers (H.H.S.)","c":"","p":"H.H.S.","t":"W","a":""},{"id":"M054","n":"Society of Jesus (Jesuits)","c":"Jesuits","p":"","t":"M","a":"Society of Jesus (Jesuits) (via email domain)"},{"id":"W017","n":"Society of Mary (Marianists)","c":"Marianists","p":"","t":"W","a":"Society of Mary (Marianists) — women's branch"},{"id":"M055","n":"Society of Mary (Marianists, S.M.)","c":"Marianists, S.M.","p":"","t":"M","a":""},{"id":"M056","n":"Society of Mary (Marist Fathers)","c":"Marist Fathers","p":"","t":"M","a":""},{"id":"P001","n":"Society of St. Vincent de Paul (lay association of the faithful)","c":"lay association of the faithful","p":"","t":"O","a":""},{"id":"M059","n":"Society of the Catholic Apostolate (Pallottines)","c":"Pallottines","p":"","t":"M","a":""},{"id":"W018","n":"Society of the Catholic Apostolate (Pallottines)","c":"Pallottines","p":"","t":"W","a":"Society of the Catholic Apostolate (Pallottines) — women's branch"},{"id":"W097","n":"Society of the Sacred Heart","c":"","p":"","t":"W","a":""},{"id":"W098","n":"Society of the Sacred Heart (R.S.C.J.)","c":"","p":"R.S.C.J.","t":"W","a":""},{"id":"M070","n":"Stigmatine Fathers (C.S.S.)","c":"","p":"C.S.S.","t":"M","a":""},{"id":"M057","n":"Sulpicians (S.S.)","c":"","p":"S.S.","t":"M","a":""},{"id":"M060","n":"Third Order Regular of St. Francis","c":"","p":"","t":"M","a":""},{"id":"W019","n":"Third Order Regular of St. Francis","c":"","p":"","t":"W","a":"Third Order Regular of St. Francis — women's branch"},{"id":"P013","n":"Trinity Health","c":"","p":"","t":"O","a":""},{"id":"W099","n":"Ursuline Sisters","c":"","p":"","t":"W","a":""},{"id":"W100","n":"Visitation Order","c":"","p":"","t":"W","a":"Visitation Order (family — verify province)"},{"id":"M061","n":"Vocationists","c":"","p":"","t":"M","a":"Vocationists (via email domain)"},{"id":"M062","n":"Xaverian Brothers","c":"","p":"","t":"M","a":""}];
+  const TYPE_FULL = { M:"Men's religious institute", W:"Women's religious institute", O:"Other / PJP" };
+  const TYPE_LABEL = { M:"Men's institute", W:"Women's institute", O:"Other / PJP" };
+
+  let selectedCommunity = null;
+
+  /* iframe height (matches the lead form's message format) */
+  function postHeight(){ window.parent.postMessage({type:'CE_FORM_HEIGHT', height:document.body.scrollHeight}, '*'); }
+  window.addEventListener('load', postHeight);
+  window.addEventListener('resize', postHeight);
+  document.addEventListener('click', () => setTimeout(postHeight, 120));
+
+  /* ---------- community lookup ---------- */
+  const searchInput = document.getElementById('community-search');
+  const resultsBox  = document.getElementById('community-results');
+
+  function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function runSearch(){
+    const q = searchInput.value.trim().toLowerCase();
+    if (q.length < 2){ resultsBox.classList.remove('show'); resultsBox.innerHTML=''; return; }
+    const hits = [];
+    for (const r of COMMUNITIES){
+      const hay = (r.n+' '+(r.c||'')+' '+(r.p||'')+' '+(r.a||'')).toLowerCase();
+      if (hay.includes(q)) hits.push(r);
+      if (hits.length >= 8) break;
+    }
+    if (!hits.length){
+      resultsBox.innerHTML = '<div class="combo-empty">No match found. Use &ldquo;Enter it manually&rdquo; below to add your community.</div>';
+    } else {
+      resultsBox.innerHTML = hits.map(function(r,i){
+        const sub = [TYPE_LABEL[r.t], r.p, r.c].filter(Boolean).join(' &middot; ');
+        return '<div class="combo-item" data-id="'+esc(r.id)+'">'
+             + '<div class="combo-name">'+esc(r.n)+'</div>'
+             + (sub ? '<div class="combo-sub">'+sub+'</div>' : '')
+             + '</div>';
+      }).join('');
+      resultsBox.querySelectorAll('.combo-item').forEach(function(el){
+        el.addEventListener('click', function(){ pickCommunity(el.dataset.id); });
+      });
+    }
+    resultsBox.classList.add('show');
+    setTimeout(postHeight, 60);
+  }
+  searchInput.addEventListener('input', runSearch);
+  searchInput.addEventListener('focus', runSearch);
+  document.addEventListener('click', function(e){
+    if (!e.target.closest('.combo')) resultsBox.classList.remove('show');
+  });
+
+  function pickCommunity(id){
+    const r = COMMUNITIES.find(x=>x.id===id);
+    if (!r) return;
+    selectedCommunity = r;
+    document.getElementById('b-comm-name').textContent = r.n;
+    document.getElementById('b-comm-sub').textContent = [TYPE_LABEL[r.t], r.p].filter(Boolean).join(' \u00b7 ');
+    document.getElementById('lookup-wrap').style.display = 'none';
+    document.getElementById('manual-toggle').style.display = 'none';
+    document.getElementById('manual-community').style.display = 'none';
+    document.getElementById('community-banner').style.display = 'block';
+    resultsBox.classList.remove('show');
+    document.getElementById('lookup-wrap').classList.remove('field-error');
+    setTimeout(postHeight, 80);
+  }
+
+  function clearCommunity(){
+    selectedCommunity = null;
+    searchInput.value = '';
+    document.getElementById('community-banner').style.display = 'none';
+    document.getElementById('lookup-wrap').style.display = '';
+    document.getElementById('manual-toggle').style.display = 'inline-block';
+    document.getElementById('manual-community').style.display = 'none';
+    setTimeout(postHeight, 80);
+  }
+
+  function showManual(){
+    selectedCommunity = null;
+    document.getElementById('manual-community').style.display = 'block';
+    document.getElementById('manual-toggle').style.display = 'none';
+    setTimeout(postHeight, 80);
+  }
+
+  /* ---------- interests error clearing ---------- */
+  document.querySelectorAll('input[name="interest"]').forEach(function(cb){
+    cb.addEventListener('change', function(){ document.getElementById('e-interests').style.display='none'; });
+  });
+
+  /* ---------- step nav ---------- */
+  function updateStepNav(active){
+    for (let i=1;i<=2;i++){
+      const sn=document.getElementById('sn'+i), sd=document.getElementById('sd'+i);
+      sn.className='step-item'+(i===active?' active':i<active?' done':'');
+      sd.textContent=i<active?'\u2713':i;
+    }
+    document.getElementById('sl1').className='step-line'+(active>1?' done':'');
+  }
+  function goToStep1(){
+    document.getElementById('sc1').classList.add('active');
+    document.getElementById('sc2').classList.remove('active');
+    updateStepNav(1);
+    setTimeout(postHeight,150);
+  }
+
+  function communityChosen(){
+    if (selectedCommunity) return true;
+    const t=document.getElementById('inst-type').value, n=document.getElementById('inst-name').value.trim();
+    return !!(t && n);
+  }
+
+  function goToStep2(){
+    // community required
+    const manualVisible = document.getElementById('manual-community').style.display !== 'none';
+    if (!communityChosen()){
+      if (manualVisible){
+        if (!document.getElementById('inst-type').value) markErr('inst-type');
+        if (!document.getElementById('inst-name').value.trim()) markErr('inst-name');
+      } else {
+        showManual();
+        document.getElementById('community-search').classList.add('field-error');
+      }
+      document.getElementById('lookup-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    // contact required
+    const ids=['honorific','first-name','last-name','email','role'];
+    ids.forEach(id=>document.getElementById(id).classList.remove('field-error'));
+    const missing=ids.filter(id=>!document.getElementById(id).value.trim());
+    if (missing.length){
+      missing.forEach(markErr);
+      document.getElementById(missing[0]).scrollIntoView({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value.trim())){
+      markErr('email');
+      document.getElementById('email').scrollIntoView({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    document.getElementById('e-interests').style.display='none';
+    document.getElementById('sc1').classList.remove('active');
+    document.getElementById('sc2').classList.add('active');
+    updateStepNav(2);
+    setTimeout(postHeight,150);
+  }
+
+  /* ---------- submit ---------- */
+  function handleSubmit(){
+    const errInt=document.getElementById('e-interests');
+    if (!document.querySelectorAll('input[name="interest"]:checked').length){
+      errInt.style.display='block';
+      errInt.scrollIntoView({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    errInt.style.display='none';
+
+    const btn=document.getElementById('submit-btn');
+    btn.disabled=true;
+    btn.innerHTML='<span class="spin"></span> Submitting\u2026';
+
+    let communityType, communityName, canonicalAuthorityId='';
+    if (selectedCommunity){
+      communityType = TYPE_FULL[selectedCommunity.t] || '';
+      communityName = selectedCommunity.n;
+      canonicalAuthorityId = selectedCommunity.id;
+    } else {
+      communityType = document.getElementById('inst-type').value;
+      communityName = document.getElementById('inst-name').value.trim();
+    }
+
+    const payload={
+      title:document.getElementById('honorific').value,
+      firstName:document.getElementById('first-name').value.trim(),
+      lastName:document.getElementById('last-name').value.trim(),
+      email:document.getElementById('email').value.trim(),
+      role:document.getElementById('role').value.trim(),
+      communityType, communityName, canonicalAuthorityId,
+      interests:[...document.querySelectorAll('input[name="interest"]:checked')].map(el=>el.value),
+      notes:document.getElementById('notes').value.trim(),
+      sourceForm:'ce-community',
+    };
+
+    /* Apps Script web apps don't return CORS headers, so we POST as a "simple
+       request" (text/plain, no-cors). The row is written server-side; the
+       response is opaque, so we optimistically show success. Confirm rows land. */
+    fetch(SHEET_ENDPOINT,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload),
+    })
+    .then(()=>{
+      var hdr=document.querySelector('.form-card-header'); if(hdr) hdr.style.display='none';
+      document.getElementById('all-screens').style.display='none';
+      document.getElementById('step-nav').style.display='none';
+      document.getElementById('success-state').classList.add('show');
+      setTimeout(postHeight,100);
+    })
+    .catch(err=>{
+      console.error('Submit error:',err);
+      btn.disabled=false;
+      btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Try Again';
+      alert('Something went wrong. Please try again or email info@catholicenergies.org');
+    });
+  }
+
+  function markErr(id){
+    const el=document.getElementById(id);
+    el.classList.add('field-error');
+    el.addEventListener('input',()=>el.classList.remove('field-error'),{once:true});
+    el.addEventListener('change',()=>el.classList.remove('field-error'),{once:true});
+  }
+</script>
+</body>
+</html>
