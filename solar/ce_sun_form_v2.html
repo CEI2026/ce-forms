@@ -871,7 +871,7 @@ async function doRegisterAccount(){
     var resp=await fetch(MIDDLEWARE+'/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var data=await resp.json();
     if(!resp.ok || !data.success) throw new Error((data&&data.error)?(typeof data.error==='string'?data.error:JSON.stringify(data.error)):'Registration failed');
-    selAcct={ id:data.id, name:data.name||name, address:data.address||[street,city,state,zip].filter(Boolean).join(', ') };
+    selAcct={ id:data.id, name:data.name||name, address:data.address||[street,city,state,zip].filter(Boolean).join(', '), isNewAccount:true };
     document.getElementById('reg-form').style.display='none';
     document.getElementById('acct-results').style.display='none';
     document.getElementById('b-acct-name').textContent=selAcct.name;
@@ -938,7 +938,11 @@ async function doLoadBuildings(){
     window._loadedBuildings = buildings;
   } catch(e) {
     console.error('Building lookup failed:',e);
-    list.innerHTML='<div class="a-err" style="display:block;">⚠ Could not load buildings. Please try again or contact your administrator.</div>';
+    if(selAcct && selAcct.isNewAccount){
+      list.innerHTML='<div class="a-info">ℹ This is a new organization, so no buildings are on file yet. Use the "Add a Building" button below to add your first building.</div>';
+    } else {
+      list.innerHTML='<div class="a-err" style="display:block;">⚠ Could not load buildings. Please try again or contact your administrator.</div>';
+    }
   }
 }
 function doUpdateSelCount(){
