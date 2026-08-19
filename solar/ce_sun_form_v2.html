@@ -224,6 +224,20 @@ input:focus,select:focus,textarea:focus { border-color:var(--orange); box-shadow
 .site-footer p { font-size:13px; color:var(--dark-mid); line-height:1.9; font-weight:500; }
 .site-footer a { color:var(--orange); text-decoration:underline; }
 .site-footer .copyright { font-size:12px; color:#aaa; margin-top:10px; letter-spacing:.04em; }
+/* ── REGISTER NEW ORG (v7) ── */
+.reg-link { font-size:13px; color:var(--orange); cursor:pointer; font-weight:600; }
+.reg-link:hover { text-decoration:underline; }
+.ei-search-wrap { position:relative; }
+.ei-results { position:absolute; left:0; right:0; top:calc(100% + 2px); z-index:20; background:var(--white); border:1.5px solid var(--border); border-radius:var(--radius); max-height:220px; overflow-y:auto; box-shadow:var(--shadow); }
+.ei-item { padding:9px 13px; cursor:pointer; border-bottom:1px solid var(--border); }
+.ei-item:last-child { border-bottom:none; }
+.ei-item:hover { background:#FFF8EE; }
+.ei-nm { font-size:13px; font-weight:600; }
+.ei-tp { font-size:11px; color:var(--dark-mid); margin-top:1px; }
+.ei-item.ei-none { cursor:default; color:var(--dark-mid); font-size:12px; }
+.ei-item.ei-none:hover { background:transparent; }
+.ei-unknown { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dark-mid); margin-top:8px; cursor:pointer; font-weight:500; }
+.ei-picked { margin-top:8px; padding:8px 12px; background:#FFF3E0; border:1px solid var(--orange); border-radius:var(--radius); font-size:12px; font-weight:600; color:#7a5c00; }
 </style>
 </head>
 <body>
@@ -291,6 +305,70 @@ input:focus,select:focus,textarea:focus { border-color:var(--orange); box-shadow
         <div class="acct-list" id="acct-list"></div>
         <div class="a-err" id="e-no-acct" style="display:none; margin-top:6px;">
           ⚠ No accounts found for this ZIP. Try a nearby ZIP or contact your Catholic Energies administrator.
+        </div>
+        <div id="reg-cta" style="margin-top:12px; text-align:center; display:none;">
+          <span class="reg-link" onclick="doShowRegister()">Don't see your organization? Register it →</span>
+        </div>
+      </div>
+
+      <div id="reg-form" style="display:none; margin-top:14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px 18px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;">
+          <div style="font-size:13px; font-weight:600; color:var(--ce-purple);">Register a New Organization</div>
+          <div class="qa-badge">⏳ Pending Review</div>
+        </div>
+        <div class="a-warn-inline" style="margin-top:0; margin-bottom:14px;">
+          ℹ New organizations are submitted for review. A Catholic Energies team member will confirm the account before it goes live.
+        </div>
+        <div class="fg">
+          <label class="fl">Organization Name <span class="req">*</span></label>
+          <input type="text" id="reg-name" placeholder="e.g. St. Michael Parish" />
+          <div class="ferr" id="e-reg-name">Organization name is required.</div>
+        </div>
+        <div class="row2">
+          <div class="fg">
+            <label class="fl">Street Address <span class="req">*</span></label>
+            <input type="text" id="reg-street" placeholder="123 Main Street" />
+            <div class="ferr" id="e-reg-street">Street is required.</div>
+          </div>
+          <div class="fg">
+            <label class="fl">City <span class="req">*</span></label>
+            <input type="text" id="reg-city" placeholder="Chicago" />
+            <div class="ferr" id="e-reg-city">City is required.</div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="fg">
+            <label class="fl">State <span class="req">*</span></label>
+            <input type="text" id="reg-state" placeholder="IL" maxlength="2" />
+            <div class="ferr" id="e-reg-state">State is required.</div>
+          </div>
+          <div class="fg">
+            <label class="fl">ZIP <span class="req">*</span></label>
+            <input type="text" id="reg-zip" placeholder="60601" maxlength="5" inputmode="numeric" />
+            <div class="ferr" id="e-reg-zip">Valid 5-digit ZIP required.</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Is this a Catholic institution? <span class="req">*</span></label>
+          <div class="rg" id="rg-reg-cath">
+            <label class="ropt" onclick="pickCatholic('yes',this)"><input type="radio" name="reg-cath" value="yes"><div class="rdot"></div>Yes</label>
+            <label class="ropt" onclick="pickCatholic('no',this)"><input type="radio" name="reg-cath" value="no"><div class="rdot"></div>No</label>
+          </div>
+          <div class="ferr" id="e-reg-cath">Please choose one.</div>
+        </div>
+        <div class="fg" id="reg-ei-block" style="display:none;">
+          <label class="fl">Diocese / Religious Order</label>
+          <div class="ei-search-wrap">
+            <input type="text" id="reg-ei-search" placeholder="Start typing to search…" autocomplete="off" oninput="filterInstitutions(this.value)" onfocus="filterInstitutions(this.value)" />
+            <div class="ei-results" id="reg-ei-results" style="display:none;"></div>
+          </div>
+          <label class="ei-unknown"><input type="checkbox" id="reg-ei-unknown" onchange="toggleEIUnknown(this.checked)"> I'm not sure / not listed</label>
+          <div class="ei-picked" id="reg-ei-picked" style="display:none;"></div>
+        </div>
+        <div class="a-err" id="e-reg-form">⚠ Please fix the errors above.</div>
+        <div class="fg" style="display:flex; gap:8px; margin-top:14px; margin-bottom:0;">
+          <button class="btn primary" style="flex:1;" id="reg-submit-btn" onclick="doRegisterAccount()">Register &amp; Continue →</button>
+          <button class="btn ghost" style="flex:1;" onclick="doHideRegister()">Cancel</button>
         </div>
       </div>
       <div id="acct-banner" style="display:none; margin-top:12px;">
@@ -604,6 +682,8 @@ const SUBMIT_URL = MIDDLEWARE + "/submit";
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let selAcct = null, selBlds = [], bldData = [], curIdx = 0, curFiles = [];
 let gmAnswer = null, gmDesc = '';
+let regInstitutions = [], regSelInstitution = null, regIsCatholic = null;  // v7 registration state
+let newAccountsEnabled = false;  // gated by middleware health flag
 
 // ── SCREEN MANAGEMENT ─────────────────────────────────────────────────────────
 const screens = ['s1','s2','s3','s4','s5','s6'];
@@ -665,6 +745,17 @@ async function doZipLookup() {
 }
 document.getElementById('zip').addEventListener('keydown',function(e){ if(e.key==='Enter') doZipLookup(); });
 
+// v7: reveal the "Register it" CTA only when the middleware reports registration is enabled.
+(async function initNewAccountsFlag(){
+  try{
+    var r=await fetch(MIDDLEWARE+'/');
+    var d=await r.json();
+    newAccountsEnabled=(d && d.newAccounts==='enabled');
+  }catch(e){ newAccountsEnabled=false; }
+  var cta=document.getElementById('reg-cta');
+  if(cta) cta.style.display=newAccountsEnabled?'block':'none';
+})();
+
 function doPickAccount(acc,el) {
   selAcct=acc;
   document.querySelectorAll('.acct-item').forEach(function(i){i.classList.remove('sel');});
@@ -673,9 +764,128 @@ function doPickAccount(acc,el) {
   document.getElementById('b-acct-addr').textContent=acc.address||acc.name||'';
   document.getElementById('b-acct-id').textContent='';
   document.getElementById('acct-results').style.display='none';
+  var _rf=document.getElementById('reg-form'); if(_rf) _rf.style.display='none';
   document.getElementById('acct-banner').style.display='block';
 }
 function doChangeAccount(){ selAcct=null; document.getElementById('acct-banner').style.display='none'; document.getElementById('acct-results').style.display='block'; }
+
+// ── STEP 1b: REGISTER A NEW ORGANIZATION (v7) ─────────────────────────────────
+function doShowRegister(){
+  document.getElementById('reg-form').style.display='block';
+  document.getElementById('acct-banner').style.display='none';
+  var z=document.getElementById('zip').value.trim();
+  if(/^\d{5}$/.test(z) && !document.getElementById('reg-zip').value) document.getElementById('reg-zip').value=z;
+  document.getElementById('reg-name').focus();
+}
+function doHideRegister(){ document.getElementById('reg-form').style.display='none'; }
+
+function pickCatholic(val,labelEl){
+  document.querySelectorAll('#rg-reg-cath .ropt').forEach(function(r){r.classList.remove('picked');});
+  labelEl.classList.add('picked');
+  labelEl.querySelector('input').checked=true;
+  regIsCatholic=(val==='yes');
+  document.getElementById('reg-ei-block').style.display=regIsCatholic?'block':'none';
+  document.getElementById('e-reg-cath').style.display='none';
+  if(regIsCatholic) loadInstitutions();
+}
+
+async function loadInstitutions(){
+  if(regInstitutions.length) return regInstitutions;
+  try{
+    var resp=await fetch(MIDDLEWARE+'/institutions');
+    if(!resp.ok) throw new Error('Server error '+resp.status);
+    var data=await resp.json();
+    regInstitutions=data.institutions||[];
+  }catch(e){ console.error('Institution load failed:',e); regInstitutions=[]; }
+  return regInstitutions;
+}
+
+function filterInstitutions(q){
+  var box=document.getElementById('reg-ei-results');
+  q=(q||'').trim().toLowerCase();
+  if(!q){ box.style.display='none'; box.innerHTML=''; return; }
+  var matches=regInstitutions.filter(function(i){ return i.name.toLowerCase().indexOf(q)>=0; }).slice(0,20);
+  if(!matches.length){
+    box.innerHTML='<div class="ei-item ei-none">No matches — use the "not sure" option below</div>';
+    box.style.display='block'; return;
+  }
+  box.innerHTML=matches.map(function(i){
+    return '<div class="ei-item" onclick="pickInstitution(\''+i.id+'\')"><div class="ei-nm">'+i.name+'</div><div class="ei-tp">'+(i.type||'')+'</div></div>';
+  }).join('');
+  box.style.display='block';
+}
+
+function pickInstitution(id){
+  regSelInstitution=regInstitutions.find(function(i){return i.id===id;})||null;
+  if(!regSelInstitution) return;
+  document.getElementById('reg-ei-search').value=regSelInstitution.name;
+  document.getElementById('reg-ei-results').style.display='none';
+  document.getElementById('reg-ei-unknown').checked=false;
+  var pk=document.getElementById('reg-ei-picked');
+  pk.innerHTML='✓ '+regSelInstitution.name+(regSelInstitution.type?' · '+regSelInstitution.type:'');
+  pk.style.display='block';
+}
+
+function toggleEIUnknown(checked){
+  var pk=document.getElementById('reg-ei-picked');
+  if(checked){
+    regSelInstitution=null;
+    document.getElementById('reg-ei-search').value='';
+    document.getElementById('reg-ei-results').style.display='none';
+    pk.innerHTML='Affiliation marked as unknown — a team member will verify.';
+    pk.style.display='block';
+  } else {
+    pk.style.display='none';
+  }
+}
+
+async function doRegisterAccount(){
+  var name=document.getElementById('reg-name').value.trim();
+  var street=document.getElementById('reg-street').value.trim();
+  var city=document.getElementById('reg-city').value.trim();
+  var state=document.getElementById('reg-state').value.trim();
+  var zip=document.getElementById('reg-zip').value.trim();
+  var cath=document.querySelector('input[name="reg-cath"]:checked');
+  ['name','street','city','state','zip','cath'].forEach(function(f){ var e=document.getElementById('e-reg-'+f); if(e) e.style.display='none'; });
+  var ef=document.getElementById('e-reg-form'); ef.style.display='none';
+  ef.textContent='⚠ Please fix the errors above.';
+  var ok=true;
+  if(!name){ document.getElementById('e-reg-name').style.display='block'; ok=false; }
+  if(!street){ document.getElementById('e-reg-street').style.display='block'; ok=false; }
+  if(!city){ document.getElementById('e-reg-city').style.display='block'; ok=false; }
+  if(!state){ document.getElementById('e-reg-state').style.display='block'; ok=false; }
+  if(!/^\d{5}$/.test(zip)){ document.getElementById('e-reg-zip').style.display='block'; ok=false; }
+  if(!cath){ document.getElementById('e-reg-cath').style.display='block'; ok=false; }
+  if(!ok){ ef.style.display='block'; return; }
+
+  var isCatholic=(cath.value==='yes');
+  var payload={
+    name:name, street:street, city:city, state:state, zip:zip,
+    isCatholic:isCatholic,
+    institutionId:(isCatholic&&regSelInstitution)?regSelInstitution.id:'',
+    institutionType:(isCatholic&&regSelInstitution)?regSelInstitution.type:''
+  };
+  var btn=document.getElementById('reg-submit-btn'); var orig=btn.innerHTML;
+  btn.innerHTML='<span class="spin"></span>'; btn.disabled=true;
+  try{
+    var resp=await fetch(MIDDLEWARE+'/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var data=await resp.json();
+    if(!resp.ok || !data.success) throw new Error((data&&data.error)?(typeof data.error==='string'?data.error:JSON.stringify(data.error)):'Registration failed');
+    selAcct={ id:data.id, name:data.name||name, address:data.address||[street,city,state,zip].filter(Boolean).join(', ') };
+    document.getElementById('reg-form').style.display='none';
+    document.getElementById('acct-results').style.display='none';
+    document.getElementById('b-acct-name').textContent=selAcct.name;
+    document.getElementById('b-acct-addr').textContent=selAcct.address||'';
+    document.getElementById('b-acct-id').textContent='';
+    document.getElementById('acct-banner').style.display='block';
+  }catch(e){
+    console.error('Registration failed:',e);
+    ef.textContent='⚠ '+(e.message||'Registration failed. Please try again or contact your administrator.');
+    ef.style.display='block';
+  }finally{
+    btn.innerHTML=orig; btn.disabled=false;
+  }
+}
 
 function goToScreen2(){
   if(!selAcct) return;
