@@ -423,10 +423,9 @@ input:focus,select:focus,textarea:focus { border-color:var(--orange); box-shadow
         <div id="add-bld-form" style="display:none; margin-top:12px; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px 18px;">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;">
             <div style="font-size:13px; font-weight:600; color:var(--ce-purple);">New Building Details</div>
-            <div class="qa-badge">⏳ Pending QA Review</div>
           </div>
           <div class="a-warn-inline" style="margin-top:0; margin-bottom:14px;">
-            ℹ Manually added buildings are flagged <strong>Pending QA Review</strong> in Catholic Energies' system. A team member will verify and confirm the record before it is finalized.
+            ℹ Manually added buildings are submitted for review. A team member will verify and confirm the record before it is finalized.
           </div>
           <div class="fg">
             <label class="fl">Building Name <span class="req">*</span></label>
@@ -1018,7 +1017,6 @@ function doAddBuilding(){
     '<div class="chkbox">✓</div>'+
     '<div><div class="bld-nm">'+newBld.name+
       ' <span style="font-size:10px;background:#fff3cd;color:#7a5c00;padding:1px 6px;border-radius:3px;font-family:\'DM Mono\',monospace;margin-left:4px;">MANUALLY ADDED</span>'+
-      ' <span style="font-size:10px;background:#ffe0b2;color:#8b4500;padding:1px 6px;border-radius:3px;font-family:\'DM Mono\',monospace;margin-left:2px;">⏳ PENDING QA</span>'+
     '</div>'+
     '<div class="bld-ad">'+newBld.address+'</div>'+
     '<div class="bld-tp">'+newBld.type+'</div></div>';
@@ -1195,7 +1193,7 @@ function doBuildReview(){
       ['Bills',bd.files.length?bd.files.length+' file(s)':'None attached'],
     ].filter(Boolean);
     var isManual=bd.bld.custom;
-    var nameBadges=bd.bld.name+(isManual?' <span style="font-size:10px;background:#fff3cd;color:#7a5c00;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;vertical-align:middle;">MANUAL</span> <span style="font-size:10px;background:#ffe0b2;color:#8b4500;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;vertical-align:middle;">⏳ PENDING QA</span>':'');
+    var nameBadges=bd.bld.name+(isManual?' <span style="font-size:10px;background:#fff3cd;color:#7a5c00;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;vertical-align:middle;">MANUAL</span>':'');
     return '<div class="rev-bld">'+
       '<div class="rev-head"><div><div class="rev-bname">'+nameBadges+'</div><div class="rev-baddr">'+(bd.bld.address||'')+' · '+(bd.bld.type||'')+'</div></div>'+
       '<span class="edit-lnk" onclick="doEditBld('+i+')">Edit</span></div>'+
