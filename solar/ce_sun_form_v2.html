@@ -314,7 +314,6 @@ input:focus,select:focus,textarea:focus { border-color:var(--orange); box-shadow
       <div id="reg-form" style="display:none; margin-top:14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px 18px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;">
           <div style="font-size:13px; font-weight:600; color:var(--ce-purple);">Register a New Organization</div>
-          <div class="qa-badge">⏳ Pending Review</div>
         </div>
         <div class="a-warn-inline" style="margin-top:0; margin-bottom:14px;">
           ℹ New organizations are submitted for review. A Catholic Energies team member will confirm the account before it goes live.
@@ -364,6 +363,19 @@ input:focus,select:focus,textarea:focus { border-color:var(--orange); box-shadow
           </div>
           <label class="ei-unknown"><input type="checkbox" id="reg-ei-unknown" onchange="toggleEIUnknown(this.checked)"> I'm not sure / not listed</label>
           <div class="ei-picked" id="reg-ei-picked" style="display:none;"></div>
+        </div>
+        <div class="fg" id="reg-denom-block" style="display:none;">
+          <label class="fl">Denomination <span class="req">*</span></label>
+          <select id="reg-denom">
+            <option value="">— Select denomination —</option>
+            <option value="Orthodox Christian">Orthodox Christian</option>
+            <option value="Protestant &#8211; Mainline">Protestant &#8211; Mainline</option>
+            <option value="Protestant &#8211; Evangelical">Protestant &#8211; Evangelical</option>
+            <option value="Jewish">Jewish</option>
+            <option value="Muslim">Muslim</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="ferr" id="e-reg-denom">Please select a denomination.</div>
         </div>
         <div class="a-err" id="e-reg-form">⚠ Please fix the errors above.</div>
         <div class="fg" style="display:flex; gap:8px; margin-top:14px; margin-bottom:0;">
@@ -785,6 +797,7 @@ function pickCatholic(val,labelEl){
   labelEl.querySelector('input').checked=true;
   regIsCatholic=(val==='yes');
   document.getElementById('reg-ei-block').style.display=regIsCatholic?'block':'none';
+  document.getElementById('reg-denom-block').style.display=regIsCatholic?'none':'block';
   document.getElementById('e-reg-cath').style.display='none';
   if(regIsCatholic) loadInstitutions();
 }
@@ -846,7 +859,7 @@ async function doRegisterAccount(){
   var state=document.getElementById('reg-state').value.trim();
   var zip=document.getElementById('reg-zip').value.trim();
   var cath=document.querySelector('input[name="reg-cath"]:checked');
-  ['name','street','city','state','zip','cath'].forEach(function(f){ var e=document.getElementById('e-reg-'+f); if(e) e.style.display='none'; });
+  ['name','street','city','state','zip','cath','denom'].forEach(function(f){ var e=document.getElementById('e-reg-'+f); if(e) e.style.display='none'; });
   var ef=document.getElementById('e-reg-form'); ef.style.display='none';
   ef.textContent='⚠ Please fix the errors above.';
   var ok=true;
@@ -856,12 +869,15 @@ async function doRegisterAccount(){
   if(!state){ document.getElementById('e-reg-state').style.display='block'; ok=false; }
   if(!/^\d{5}$/.test(zip)){ document.getElementById('e-reg-zip').style.display='block'; ok=false; }
   if(!cath){ document.getElementById('e-reg-cath').style.display='block'; ok=false; }
+  var _denomVal = document.getElementById('reg-denom') ? document.getElementById('reg-denom').value : '';
+  if(cath && cath.value==='no' && !_denomVal){ document.getElementById('e-reg-denom').style.display='block'; ok=false; }
   if(!ok){ ef.style.display='block'; return; }
 
   var isCatholic=(cath.value==='yes');
   var payload={
     name:name, street:street, city:city, state:state, zip:zip,
     isCatholic:isCatholic,
+    denomination:(isCatholic?'':_denomVal),
     institutionId:(isCatholic&&regSelInstitution)?regSelInstitution.id:'',
     institutionType:(isCatholic&&regSelInstitution)?regSelInstitution.type:''
   };
