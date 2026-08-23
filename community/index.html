@@ -339,7 +339,7 @@
       if (hits.length >= 8) break;
     }
     if (!hits.length){
-      resultsBox.innerHTML = '<div class="combo-empty">No match found. Click &ldquo;My community isn&rsquo;t listed&rdquo; below to enter it manually.</div>';
+      resultsBox.innerHTML = '<div class="combo-empty">No match found. <a class="combo-empty-link" href="#" onclick="event.preventDefault();showManual();" style="color:var(--orange);font-weight:700;text-decoration:underline;cursor:pointer;">Enter your community manually.</a></div>';
     } else {
       resultsBox.innerHTML = hits.map(function(r,i){
         const sub = [TYPE_LABEL[r.t], r.p, r.c].filter(Boolean).join(' &middot; ');
