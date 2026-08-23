@@ -79,7 +79,7 @@
     .sel-banner-info strong { font-size:14px; font-weight:700; color:var(--orange); display:block; }
     .sel-banner-info span { font-size:12px; color:var(--text-mid); }
     .chg-link { font-size:12px; color:var(--orange); text-decoration:underline; cursor:pointer; font-weight:600; white-space:nowrap; }
-    .link-btn { background:none; border:none; color:var(--orange); font-size:12.5px; font-weight:600; text-decoration:underline; cursor:pointer; padding:0; margin-top:10px; font-family:inherit; display:inline-block; }
+    .link-btn { background:none; border:none; color:var(--orange); font-size:15px; font-weight:700; text-decoration:underline; cursor:pointer; padding:0; margin-top:12px; font-family:inherit; display:inline-block; }
 
     .a-err { padding:10px 13px; background:#FDECEA; border:1px solid #f5b4b4; border-radius:var(--radius); font-size:13px; color:var(--error); font-weight:600; display:none; margin-top:10px; }
 
@@ -226,7 +226,11 @@
               <input type="email" id="email" placeholder="mary@congregation.org" autocomplete="email" />
             </div>
           </div>
-          <div class="field-row full">
+          <div class="field-row">
+            <div class="field-group">
+              <label>Phone Number</label>
+              <input type="tel" id="phone" placeholder="(202) 555-0142" autocomplete="tel" />
+            </div>
             <div class="field-group">
               <label>Role <span class="req">*</span></label>
               <input type="text" id="role" placeholder="e.g. Treasurer, Facilities Director" />
@@ -328,7 +332,7 @@
       if (hits.length >= 8) break;
     }
     if (!hits.length){
-      resultsBox.innerHTML = '<div class="combo-empty">No match found. Use &ldquo;Enter it manually&rdquo; below to add your community.</div>';
+      resultsBox.innerHTML = '<div class="combo-empty">No match found. Click &ldquo;My community isn&rsquo;t listed&rdquo; below to enter it manually.</div>';
     } else {
       resultsBox.innerHTML = hits.map(function(r,i){
         const sub = [TYPE_LABEL[r.t], r.p, r.c].filter(Boolean).join(' &middot; ');
@@ -473,6 +477,7 @@
       firstName:document.getElementById('first-name').value.trim(),
       lastName:document.getElementById('last-name').value.trim(),
       email:document.getElementById('email').value.trim(),
+      phone:document.getElementById('phone').value.trim(),
       role:document.getElementById('role').value.trim(),
       communityType, communityName, canonicalAuthorityId,
       interests:[...document.querySelectorAll('input[name="interest"]:checked')].map(el=>el.value),
@@ -513,6 +518,10 @@
     el.addEventListener('input',()=>el.classList.remove('field-error'),{once:true});
     el.addEventListener('change',()=>el.classList.remove('field-error'),{once:true});
   }
+
+  /* ---------- phone auto-format (US) ---------- */
+  function fmtPhone(v){const d=v.replace(/\D/g,'').slice(0,10);if(d.length<4)return d;if(d.length<7)return `(${d.slice(0,3)}) ${d.slice(3)}`;return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;}
+  document.getElementById('phone').addEventListener('blur',function(){if(this.value.trim())this.value=fmtPhone(this.value);});
 </script>
 </body>
 </html>
