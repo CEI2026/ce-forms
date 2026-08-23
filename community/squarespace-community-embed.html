@@ -1,0 +1,35 @@
+<!--
+  Squarespace embed snippet for the Religious Community Cohort Interest Form
+  ==========================================================================
+  CANONICAL SOURCE of the contents of the Code Block on the
+  "Religious Community Cohort Interest Form" page at catholicenergies.org.
+
+  This file is NOT served by Netlify — it exists so the embed
+  snippet is version-controlled. If the Squarespace block is ever
+  lost, mangled, or needs re-creating, paste the body below
+  (everything after this comment) into a plain CODE block
+  (NOT an "Embed" block — the Embed block type wraps content in a
+  16:9 video letterbox container, which renders black pillar bars
+  around the form; discovered and fixed on both ESCO and community
+  forms during this project, Aug 2026).
+
+  How it works: the iframe loads the live form from Netlify; the
+  form's JS posts its content height (ceEscoHeight) on load, step
+  change, and resize, and requests a parent scroll (ceEscoScroll)
+  on step navigation and successful submission. The listener below
+  resizes the iframe to fit and scrolls it into view.
+-->
+<iframe id="ce-community-frame" src="https://ce-community-form.netlify.app/"
+        style="width:100%;border:0;display:block" height="1200"
+        scrolling="no" title="Community Interest Form"></iframe>
+<script>
+(function () {
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    var f = document.getElementById('ce-community-frame');
+    if (!f) return;
+    if (d.ceEscoHeight) { f.style.height = d.ceEscoHeight + 'px'; }
+    if (d.ceEscoScroll) { f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+})();
+</script>
