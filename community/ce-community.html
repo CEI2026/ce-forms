@@ -295,7 +295,7 @@
 <script>
   /* Interim: posts to a Google Apps Script Web App that appends a row to a
      Google Sheet. Replace the placeholder with YOUR deployed /exec URL. */
-  const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzxl0o4i4PFGQexfNUd-rC5dWR3iLmAwMhKNs4l6bCbv4zcGlWM35TtYsJPGn1bJD0n/exec';
+  const LEAD_SUBMIT_ENDPOINT = 'https://ce-solar-middleware-c282cb05db3f.herokuapp.com/lead-submit';
 
   /* Religious institutes from the OCD v10.1 EI Authority Master (Men's,
      Women's, Other/PJP). Fields: id, n(ame), c(ommon), p(ost-nominal),
@@ -483,11 +483,14 @@
     /* Apps Script web apps don't return CORS headers, so we POST as a "simple
        request" (text/plain, no-cors). The row is written server-side; the
        response is opaque, so we optimistically show success. Confirm rows land. */
-    fetch(SHEET_ENDPOINT,{
+    fetch(LEAD_SUBMIT_ENDPOINT,{
       method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload),
+    })
+    .then(res=>{
+      if(!res.ok) throw new Error('Submission rejected with status '+res.status);
+      return res.json();
     })
     .then(()=>{
       var hdr=document.querySelector('.form-card-header'); if(hdr) hdr.style.display='none';
