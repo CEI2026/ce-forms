@@ -194,7 +194,7 @@
 
         <div class="form-section">
           <div class="section-label">About You</div>
-          <div class="field-row title-name">
+          <div class="field-row" style="grid-template-columns:100px 1fr 1fr;">
             <div class="field-group">
               <label>Title <span class="req">*</span></label>
               <select id="honorific">
@@ -215,22 +215,22 @@
               <label>First Name <span class="req">*</span></label>
               <input type="text" id="first-name" placeholder="Mary" autocomplete="given-name" />
             </div>
-          </div>
-          <div class="field-row">
             <div class="field-group">
               <label>Last Name <span class="req">*</span></label>
               <input type="text" id="last-name" placeholder="Sullivan" autocomplete="family-name" />
             </div>
+          </div>
+          <div class="field-row">
             <div class="field-group">
               <label>Email Address <span class="req">*</span></label>
               <input type="email" id="email" placeholder="mary@congregation.org" autocomplete="email" />
             </div>
-          </div>
-          <div class="field-row">
             <div class="field-group">
               <label>Phone Number</label>
               <input type="tel" id="phone" placeholder="(202) 555-0142" autocomplete="tel" />
             </div>
+          </div>
+          <div class="field-row full">
             <div class="field-group">
               <label>Role <span class="req">*</span></label>
               <input type="text" id="role" placeholder="e.g. Treasurer, Facilities Director" />
@@ -299,6 +299,7 @@
     </div>
     <h3>Thank You for Reaching Out!</h3>
     <p>A member of the Catholic Energies team will be in touch with you shortly. We look forward to the conversation.</p>
+    <button class="btn-next" style="margin-top:24px;" onclick="location.reload()">Submit another inquiry</button>
   </div>
 
 </div>
@@ -515,6 +516,8 @@
       document.getElementById('all-screens').style.display='none';
       document.getElementById('step-nav').style.display='none';
       document.getElementById('success-state').classList.add('show');
+      window.scrollTo({top:0,behavior:'smooth'});
+      try{ window.parent.postMessage({ceEscoScroll:true},'*'); }catch(e){}
       setTimeout(postHeight,100);
     })
     .catch(err=>{
