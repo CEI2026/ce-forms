@@ -319,7 +319,12 @@
   let selectedCommunity = null;
 
   /* iframe height (matches the lead form's message format) */
-  function postHeight(){ window.parent.postMessage({type:'CE_FORM_HEIGHT', height:document.body.scrollHeight}, '*'); }
+  function postHeight(){
+    try{ window.parent.postMessage({ceEscoHeight: document.documentElement.scrollHeight}, '*'); }catch(e){}
+  }
+  function requestParentScroll(){
+    try{ window.parent.postMessage({ceEscoScroll: true}, '*'); }catch(e){}
+  }
   window.addEventListener('load', postHeight);
   window.addEventListener('resize', postHeight);
   document.addEventListener('click', () => setTimeout(postHeight, 120));
@@ -517,7 +522,7 @@
       document.getElementById('step-nav').style.display='none';
       document.getElementById('success-state').classList.add('show');
       window.scrollTo({top:0,behavior:'smooth'});
-      try{ window.parent.postMessage({ceEscoScroll:true},'*'); }catch(e){}
+      requestParentScroll();
       setTimeout(postHeight,100);
     })
     .catch(err=>{
