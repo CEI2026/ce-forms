@@ -260,6 +260,13 @@
             <label class="check-item"><input type="checkbox" name="interest" value="Clean Energy Procurement" /><span>Clean Energy Procurement</span></label>
             <label class="check-item"><input type="checkbox" name="interest" value="Net Zero Planning" /><span>Net Zero Planning</span></label>
             <label class="check-item" style="grid-column:1/-1;"><input type="checkbox" name="interest" value="Carbon Drawdown and Reforestation" /><span>Carbon Drawdown and Reforestation</span></label>
+            <label class="check-item" style="grid-column:1/-1;"><input type="checkbox" name="interest" id="interest-other-cb" value="Other" /><span>Other</span></label>
+          </div>
+          <div id="interest-other-wrap" style="display:none;margin-top:10px;">
+            <div class="field-group">
+              <label>Please describe <span class="req">*</span></label>
+              <input type="text" id="interest-other-text" placeholder="e.g. Laudato Si' Action Platform, water conservation" />
+            </div>
           </div>
           <div class="a-err" id="e-interests">Please select at least one area of interest to continue.</div>
         </div>
@@ -480,7 +487,13 @@
       phone:document.getElementById('phone').value.trim(),
       role:document.getElementById('role').value.trim(),
       communityType, communityName, canonicalAuthorityId,
-      interests:[...document.querySelectorAll('input[name="interest"]:checked')].map(el=>el.value),
+      interests:[...document.querySelectorAll('input[name="interest"]:checked')].map(function(el){
+        if(el.id==='interest-other-cb'){
+          var t=document.getElementById('interest-other-text').value.trim();
+          return t ? 'Other: '+t : 'Other';
+        }
+        return el.value;
+      }),
       notes:document.getElementById('notes').value.trim(),
       sourceForm:'ce-community',
     };
@@ -518,6 +531,14 @@
     el.addEventListener('input',()=>el.classList.remove('field-error'),{once:true});
     el.addEventListener('change',()=>el.classList.remove('field-error'),{once:true});
   }
+
+  /* ---------- Other interest toggle ---------- */
+  document.getElementById('interest-other-cb').addEventListener('change',function(){
+    var wrap=document.getElementById('interest-other-wrap');
+    wrap.style.display=this.checked?'block':'none';
+    if(!this.checked) document.getElementById('interest-other-text').value='';
+    setTimeout(postHeight,80);
+  });
 
   /* ---------- phone auto-format (US) ---------- */
   function fmtPhone(v){const d=v.replace(/\D/g,'').slice(0,10);if(d.length<4)return d;if(d.length<7)return `(${d.slice(0,3)}) ${d.slice(3)}`;return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;}
