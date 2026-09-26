@@ -234,16 +234,31 @@ function showBuilding(idx){
   document.getElementById('f-elec').value=a.elec!=null?a.elec:''; document.getElementById('f-gas').value=a.gas!=null?a.gas:'';
   document.getElementById('f-shared').value=a.shared||''; document.getElementById('f-fuel').value=a.fuel||'';
   document.getElementById('f-occ').value=a.occ!=null?a.occ:''; document.getElementById('f-hvac').value=a.hvac||'';
+  document.getElementById(a.unit==='campus'?'f-unit-campus':'f-unit-building').checked=true;
+  document.getElementById('f-campus-cover').checked=!!a.cover;
   var ref=document.getElementById('sqft-ref'), wrap=document.getElementById('county-chk-wrap'), cb=document.getElementById('f-county-ok');
   if(b.sqft_county!=null){
     ref.textContent='County records show '+fmtNum(b.sqft_county)+' sq ft for this building. County figures are often approximate. Type your own number, or confirm the county figure if you know it is right.';
     wrap.style.display=(b.sqft_county_source==='county')?'flex':'none';
     cb.checked=!!a.confirmed;
   } else { ref.textContent='Enter the square footage of this building.'; wrap.style.display='none'; cb.checked=false; }
-  ['e-sqft','e-spend','e-occ'].forEach(function(id){ err(id,false); });
+  ['e-sqft','e-spend','e-occ','e-shared'].forEach(function(id){ err(id,false); });
+  onUnitChange();
   curFiles=bd.files.slice(); renderChips();
   document.getElementById('btn-prev').textContent=idx===0?'\u2190 Back':'\u2190 Previous building';
   document.getElementById('btn-next').textContent=idx===bldData.length-1?'Continue \u2192':'Next building \u2192';
+  postHeight();
+}
+function curUnit(){ return document.getElementById('f-unit-campus').checked?'campus':'building'; }
+function onUnitChange(){
+  var campus=curUnit()==='campus';
+  document.getElementById('l-sqft').innerHTML=(campus?'Total square footage of all the buildings these bills cover':'Square footage of this building')+' <span class="req">*</span>';
+  show('campus-sqft-hint',campus);
+  document.getElementById('l-shared').innerHTML=campus?'Which buildings do these bills cover? <span class="req">*</span>':'Do these bills cover other buildings too? <span class="fl opt">&mdash; optional</span>';
+  document.getElementById('f-shared').placeholder=campus?'e.g. Main building, Athletic Center, Library annex':'e.g. the hall and rectory are on the same meter as the church';
+  show('h-shared',!campus);
+  document.getElementById('campus-cover-wrap').style.display=campus?'flex':'none';
+  if(!campus) err('e-shared',false);
   postHeight();
 }
 function onCountyConfirm(checked){ var b=bldData[curIdx].bld; if(checked&&b.sqft_county!=null) document.getElementById('f-sqft').value=Math.round(b.sqft_county); }
@@ -255,17 +270,20 @@ function collectBuilding(){
   var elec=optNum('f-elec'), gas=optNum('f-gas');
   var noSpend=(elec==null||isNaN(elec))&&(gas==null||isNaN(gas)); bad=err('e-spend',noSpend&&!curFiles.length)||bad;
   var occ=optNum('f-occ'); bad=err('e-occ',occ!=null&&!(occ>=0&&occ<=168))||bad;
+  var unit=curUnit(); bad=err('e-shared',unit==='campus'&&!document.getElementById('f-shared').value.trim())||bad;
   if(bad){ postHeight(); return false; }
   var confirmed=document.getElementById('f-county-ok').checked&&b.sqft_county!=null&&Math.abs(sqft-b.sqft_county)<=0.5;
   bldData[curIdx].answers={ sqft:sqft, confirmed:confirmed, elec:(elec==null||isNaN(elec))?null:elec, gas:(gas==null||isNaN(gas))?null:gas,
-    shared:document.getElementById('f-shared').value.trim(), fuel:document.getElementById('f-fuel').value, occ:(occ==null||isNaN(occ))?null:occ, hvac:document.getElementById('f-hvac').value.trim() };
+    shared:document.getElementById('f-shared').value.trim(), fuel:document.getElementById('f-fuel').value, occ:(occ==null||isNaN(occ))?null:occ, hvac:document.getElementById('f-hvac').value.trim(),
+    unit:unit, cover:unit==='campus'&&document.getElementById('f-campus-cover').checked };
   bldData[curIdx].files=curFiles.slice(); return true;
 }
 function nextBuilding(){ if(!collectBuilding()) return; if(curIdx<bldData.length-1) showBuilding(curIdx+1); else goToScreen(4); }
 function prevBuilding(){ collectBuildingSoft(); if(curIdx>0) showBuilding(curIdx-1); else goToScreen(2); }
 function collectBuildingSoft(){ var sqft=optNum('f-sqft'), elec=optNum('f-elec'), gas=optNum('f-gas'), occ=optNum('f-occ'); var b=bldData[curIdx].bld;
   bldData[curIdx].answers={ sqft:sqft, confirmed:document.getElementById('f-county-ok').checked&&b.sqft_county!=null&&sqft!=null&&Math.abs(sqft-b.sqft_county)<=0.5, elec:elec, gas:gas,
-    shared:document.getElementById('f-shared').value.trim(), fuel:document.getElementById('f-fuel').value, occ:occ, hvac:document.getElementById('f-hvac').value.trim() }; bldData[curIdx].files=curFiles.slice(); }
+    shared:document.getElementById('f-shared').value.trim(), fuel:document.getElementById('f-fuel').value, occ:occ, hvac:document.getElementById('f-hvac').value.trim(),
+    unit:curUnit(), cover:curUnit()==='campus'&&document.getElementById('f-campus-cover').checked }; bldData[curIdx].files=curFiles.slice(); }
 function backToDetails(){ showBuilding(bldData.length-1); goToScreen(3); }
 
 // ── files (SAF) ──────────────────────────────────────────────────────
@@ -299,9 +317,10 @@ function goToReview(){
             '<div class="rev-row"><span class="rrk">Contact</span><span class="rrv">'+esc(c.first_name+' '+c.last_name)+' \u00b7 '+esc(c.email)+'</span></div>'];
   bldData.forEach(function(bd){ var a=bd.answers||{};
     rows.push('<div class="rev-bld">'+esc(bd.bld.name)+(bd.bld.custom?' (added)':'')+'</div>');
+    if(a.unit==='campus') rows.push('<div class="rev-row"><span class="rrk">Covers</span><span class="rrv">Campus'+(a.cover?' (all buildings confirmed)':' (coverage not confirmed)')+'</span></div>');
     rows.push('<div class="rev-row"><span class="rrk">Square feet</span><span class="rrv">'+fmtNum(a.sqft)+(a.confirmed?' (county, confirmed)':'')+'</span></div>');
     rows.push('<div class="rev-row"><span class="rrk">Electric / gas spend</span><span class="rrv">'+fmtMoney(a.elec)+' / '+fmtMoney(a.gas)+'</span></div>');
-    if(a.shared) rows.push('<div class="rev-row"><span class="rrk">Shared meter</span><span class="rrv">'+esc(a.shared)+'</span></div>');
+    if(a.shared) rows.push('<div class="rev-row"><span class="rrk">'+(a.unit==='campus'?'Buildings':'Shared meter')+'</span><span class="rrv">'+esc(a.shared)+'</span></div>');
     rows.push('<div class="rev-row"><span class="rrk">Bills</span><span class="rrv">'+(bd.files.length?bd.files.length+' file'+(bd.files.length!==1?'s':''):'None')+'</span></div>');
   });
   document.getElementById('rev-box').innerHTML=rows.join(''); goToScreen(5);
@@ -319,7 +338,8 @@ async function doSubmit(){
       bl.push({ sf_building_id:b.custom?'NEW':b.id, manually_added:!!b.custom, building_name:b.name, building_type:b.type, building_address:b.address,
         county_sqft_reference:b.sqft_county, client_sqft:a.sqft, client_confirmed_county_sqft:!!a.confirmed,
         client_electric_spend:a.elec, client_gas_spend:a.gas, client_heating_fuel:a.fuel||'', client_occupancy_hours_week:a.occ,
-        client_hvac_vintage:a.hvac||'', client_shared_meter_note:a.shared||'', bill_files:files });
+        client_hvac_vintage:a.hvac||'', client_shared_meter_note:a.shared||'',
+        screening_unit:a.unit||'building', campus_coverage_confirmed:!!a.cover, bill_files:files });
     }
     var payload={ sf_account_id:selAcct.id, contact:contact(), submitted_at:new Date().toISOString(), source_form:'ce-screening', buildings:bl };
     status.textContent='Sending to Catholic Energies\u2026';

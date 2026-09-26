@@ -221,10 +221,17 @@ details.more .grid2 { margin-top:14px; }
     <div class="card-body">
       <div class="bnav" id="bnav"></div>
       <div class="fg">
-        <label class="fl" for="f-sqft">Square footage of this building <span class="req">*</span></label>
+        <label class="fl">What do your bills for this entry cover? <span class="req">*</span></label>
+        <label class="chk"><input type="radio" name="f-unit" id="f-unit-building" value="building" onchange="onUnitChange()" checked> Just this building &mdash; it has its own meters and bills</label>
+        <label class="chk"><input type="radio" name="f-unit" id="f-unit-campus" value="campus" onchange="onUnitChange()"> A campus &mdash; several buildings share these meters or bills</label>
+        <div class="fhint">Not sure which meter serves which building? Choose campus and enter everything together. That is the most reliable way to screen a school or parish campus.</div>
+      </div>
+      <div class="fg">
+        <label class="fl" for="f-sqft" id="l-sqft">Square footage of this building <span class="req">*</span></label>
         <input type="number" id="f-sqft" min="1" step="1" inputmode="numeric" placeholder="e.g. 18000" oninput="onSqftInput()">
         <div class="fhint" id="sqft-ref"></div>
         <label class="chk" id="county-chk-wrap" style="display:none;"><input type="checkbox" id="f-county-ok" onchange="onCountyConfirm(this.checked)"> The county figure is correct &mdash; use it.</label>
+        <div class="fhint" id="campus-sqft-hint" style="display:none;">Add up the gross floor area of each whole building the bills cover. Do not add rooms inside a building separately &mdash; a gym, cafeteria or library inside the main building is already counted in it.</div>
         <div class="ferr" id="e-sqft">Please enter the square footage (a number greater than zero).</div>
       </div>
       <div class="sdiv">Last year's energy spend for this building</div>
@@ -235,9 +242,11 @@ details.more .grid2 { margin-top:14px; }
       </div>
       <div class="ferr" id="e-spend" style="margin:-8px 0 14px;">Enter last year's energy spend, or attach energy bills below, or both.</div>
       <div class="fg">
-        <label class="fl" for="f-shared">Do these bills cover other buildings too? <span class="fl opt">&mdash; optional</span></label>
+        <label class="fl" for="f-shared" id="l-shared">Do these bills cover other buildings too? <span class="fl opt">&mdash; optional</span></label>
         <input type="text" id="f-shared" maxlength="255" placeholder="e.g. the hall and rectory are on the same meter as the church">
-        <div class="fhint">If one set of bills serves several buildings, enter the figures here on the main building and name the others.</div>
+        <div class="fhint" id="h-shared">If one set of bills serves several buildings, enter the figures here on the main building and name the others.</div>
+        <div class="ferr" id="e-shared">For a campus, please name the buildings these bills cover.</div>
+        <label class="chk" id="campus-cover-wrap" style="display:none;"><input type="checkbox" id="f-campus-cover"> These bills cover every building in the square footage above (note any exceptions in the box).</label>
       </div>
       <details class="more">
         <summary>More about this building (optional)</summary>
