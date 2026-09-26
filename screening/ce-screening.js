@@ -19,7 +19,7 @@
 
 var MIDDLEWARE = "https://ce-solar-middleware-c282cb05db3f.herokuapp.com";
 var SUBMIT_URL = MIDDLEWARE + "/screening-request";
-var MAX_FILES = 12, MAX_FILE_BYTES = 5 * 1024 * 1024;
+var MAX_FILES = 12, MAX_FILE_BYTES = 20 * 1024 * 1024; // v1.2: one bill per request
 
 // ── embed handshake (identical to ce-esco.js) ────────────────────────
 var isEmbedded = (function(){ try { return window.parent !== window; } catch (e) { return true; } })();
@@ -290,7 +290,7 @@ function backToDetails(){ showBuilding(bldData.length-1); goToScreen(3); }
 function addFiles(inp){
   Array.from(inp.files).forEach(function(f){
     if(!/\.(pdf|jpe?g|png)$/i.test(f.name)) return;
-    if(f.size>MAX_FILE_BYTES){ alert(f.name+' is larger than 5 MB and was not added.'); return; }
+    if(f.size>MAX_FILE_BYTES){ alert(f.name+' is larger than 20 MB and was not added. Scanning at 200 dpi in grayscale usually brings a bill well under that.'); return; }
     if(curFiles.length<MAX_FILES&&!curFiles.find(function(x){ return x.name===f.name; })) curFiles.push(f);
   });
   inp.value=''; renderChips();
@@ -326,36 +326,84 @@ function goToReview(){
   document.getElementById('rev-box').innerHTML=rows.join(''); goToScreen(5);
 }
 
-// ── submit: one payload to /screening-request, success only on res.ok ─
+// ── submit (v1.2): details first, then one bill per request, then complete ─
+// Step 1 sends the building details and bill NAMES; the middleware returns
+// a short-lived upload token per building. Step 2 sends each bill on its
+// own (retried twice), so large scans never hit the 30-second limit.
+// Step 3 marks the building complete; only then can Catholic Energies
+// fetch it. A bill that fails is named on the thank-you screen and
+// flagged for the reviewer.
+async function postJSON(url, body){
+  var resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var data={}; try{ data=await resp.json(); }catch(x){}
+  return {ok:resp.ok&&data.success!==false, status:resp.status, data:data};
+}
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+async function uploadBill(rec, sid, file){
+  var b64;
+  try{ b64=(await fileToB64(file)).data; }catch(x){ return false; }
+  for(var attempt=0; attempt<3; attempt++){
+    try{
+      var r=await postJSON(MIDDLEWARE+'/screening-file',{ building_id:rec.buildingId, submission_id:sid, token:rec.uploadToken, name:file.name, data:b64 });
+      if(r.ok) return true;
+      if(r.status===400||r.status===403||r.status===413) return false;   // retrying will not help
+    }catch(x){ /* network: retry */ }
+    await sleep(1500*(attempt+1));
+  }
+  return false;
+}
 async function doSubmit(){
   var btn=document.getElementById('sub-btn'), status=document.getElementById('sub-status'), e=document.getElementById('e-submit');
   e.style.display='none'; btn.innerHTML='<span class="spin"></span> Sending\u2026'; btn.disabled=true; status.style.display='block'; status.textContent='Preparing your submission\u2026';
+  var sid=null;
   try{
     var bl=[];
     for(var i=0;i<bldData.length;i++){
-      var bd=bldData[i], a=bd.answers||{}, b=bd.bld, files=[];
-      for(var j=0;j<bd.files.length;j++){ try{ files.push(await fileToB64(bd.files[j])); }catch(x){ console.warn('File read failed:',x); } }
+      var bd=bldData[i], a=bd.answers||{}, b=bd.bld;
       bl.push({ sf_building_id:b.custom?'NEW':b.id, manually_added:!!b.custom, building_name:b.name, building_type:b.type, building_address:b.address,
         county_sqft_reference:b.sqft_county, client_sqft:a.sqft, client_confirmed_county_sqft:!!a.confirmed,
         client_electric_spend:a.elec, client_gas_spend:a.gas, client_heating_fuel:a.fuel||'', client_occupancy_hours_week:a.occ,
         client_hvac_vintage:a.hvac||'', client_shared_meter_note:a.shared||'',
-        screening_unit:a.unit||'building', campus_coverage_confirmed:!!a.cover, bill_files:files });
+        screening_unit:a.unit||'building', campus_coverage_confirmed:!!a.cover,
+        bill_files:bd.files.map(function(f){ return {name:f.name, size:f.size, type:f.type}; }) });
     }
-    var payload={ sf_account_id:selAcct.id, contact:contact(), submitted_at:new Date().toISOString(), source_form:'ce-screening', buildings:bl };
-    status.textContent='Sending to Catholic Energies\u2026';
-    var resp=await fetch(SUBMIT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    var data={}; try{ data=await resp.json(); }catch(x){}
-    if(!resp.ok||!data.success){
-      var msg=(data.errors&&data.errors.length)?data.errors.join(' '):(data.error||('Submission failed ('+resp.status+').'));
+    var payload={ sf_account_id:selAcct.id, contact:contact(), submitted_at:new Date().toISOString(), source_form:'ce-screening', upload_mode:'separate', buildings:bl };
+    status.textContent='Sending your details to Catholic Energies\u2026';
+    var r1=await postJSON(SUBMIT_URL,payload);
+    if(!r1.ok){
+      var d=r1.data, msg=(d.errors&&d.errors.length)?d.errors.join(' '):(d.error||('Submission failed ('+r1.status+').'));
       throw new Error(msg);
     }
+    sid=r1.data.submissionId;
+    var recs=r1.data.records||[], total=0, done=0, failed=[];
+    recs.forEach(function(rec,k){ if(rec.uploadToken) total+=bldData[k].files.length; });
+    for(var k=0;k<recs.length;k++){
+      var rec=recs[k], files=bldData[k].files, bFailed=[];
+      if(!rec.uploadToken) continue;
+      for(var j=0;j<files.length;j++){
+        done++;
+        status.textContent='Uploading bill '+done+' of '+total+' \u2014 '+files[j].name+' ('+Math.max(1,Math.round(files[j].size/1048576))+' MB)\u2026';
+        postHeight();
+        if(!(await uploadBill(rec, sid, files[j]))){ bFailed.push(files[j].name); failed.push(files[j].name); }
+      }
+      status.textContent='Finishing up\u2026';
+      var okc=false;
+      for(var t=0;t<3&&!okc;t++){
+        try{ okc=(await postJSON(MIDDLEWARE+'/screening-complete',{ building_id:rec.buildingId, submission_id:sid, token:rec.uploadToken, failed:bFailed })).ok; }catch(x){}
+        if(!okc) await sleep(1500*(t+1));
+      }
+      if(!okc) throw new Error('Your details and bills were received, but we could not finish the request. Please email info@catholicenergies.org and quote reference '+sid+'.');
+    }
     document.getElementById('rev-wrap').style.display='none';
-    document.getElementById('suc-msg').innerHTML='Your screening request for <strong>'+esc(selAcct.name)+'</strong> has been received. Catholic Energies will review it and send a one-page result to <strong>'+esc(contact().email)+'</strong> within a week.';
+    var m='Your screening request for <strong>'+esc(selAcct.name)+'</strong> has been received (reference '+esc(sid)+'). Catholic Energies will review it and send a one-page result to <strong>'+esc(contact().email)+'</strong> within a week.';
+    if(failed.length) m+='<br><br>'+failed.length+' of '+total+' bill'+(total===1?'':'s')+' could not be uploaded: <strong>'+failed.map(esc).join(', ')+'</strong>. We have noted this on your request; you can reply to our email with those bills.';
+    document.getElementById('suc-msg').innerHTML=m;
     document.getElementById('suc-screen').style.display='block';
     if(isEmbedded) requestParentScroll(); else window.scrollTo({top:0,behavior:'smooth'});
   }catch(x){
     console.error('Submission error:',x); btn.innerHTML='Submit to Catholic Energies'; btn.disabled=false; status.style.display='none';
     e.textContent='\u26a0 '+(x.message||'Submission failed. Please try again.'); e.style.display='block';
+    if(sid) btn.style.display='none';   // details already saved: do not invite a duplicate submission
   }
   postHeight();
 }
