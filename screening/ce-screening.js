@@ -308,7 +308,19 @@ ua.addEventListener('drop',function(e){ e.preventDefault(); ua.classList.remove(
 function fileToB64(file){ return new Promise(function(resolve,reject){ var r=new FileReader(); r.onload=function(){ resolve({name:file.name,type:file.type,data:r.result.split(',')[1]}); }; r.onerror=function(){ reject(new Error('Read failed')); }; r.readAsDataURL(file); }); }
 
 // ── step 4/5: contact + review ───────────────────────────────────────
-function contact(){ var f=function(id){ return document.getElementById(id).value.trim(); }; return { first_name:f('c-first'), last_name:f('c-last'), email:f('c-email'), phone:f('c-phone'), role:f('c-role') }; }
+// 2026-09-28: phone formatted as (865) 555-1234 while typing and on submit;
+// non-US numbers are left as their digits. Contact inputs carry autocomplete
+// attributes in index.html so the browser or 1Password can fill them.
+function fmtPhone(v){
+  var d=String(v||'').replace(/\D/g,''); if(d.length===11&&d.charAt(0)==='1') d=d.slice(1);
+  if(d.length>10) return d;
+  if(d.length<=3) return d;
+  if(d.length<=6) return '('+d.slice(0,3)+') '+d.slice(3);
+  return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6,10);
+}
+document.getElementById('c-phone').addEventListener('input',function(){ this.value=fmtPhone(this.value); });
+document.getElementById('c-phone').addEventListener('change',function(){ this.value=fmtPhone(this.value); });
+function contact(){ var f=function(id){ return document.getElementById(id).value.trim(); }; return { first_name:f('c-first'), last_name:f('c-last'), email:f('c-email'), phone:fmtPhone(f('c-phone')), role:f('c-role') }; }
 function goToReview(){
   var c=contact(); var bad=false;
   bad=err('e-c-first',!c.first_name)||bad; bad=err('e-c-last',!c.last_name)||bad; bad=err('e-c-email',!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email))||bad;
