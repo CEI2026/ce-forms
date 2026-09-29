@@ -19,7 +19,7 @@
 
 var MIDDLEWARE = "https://ce-solar-middleware-c282cb05db3f.herokuapp.com";
 var SUBMIT_URL = MIDDLEWARE + "/screening-request";
-var MAX_FILES = 12, MAX_FILE_BYTES = 25 * 1024 * 1024; // v1.2: one bill per request
+var MAX_FILES = 36, MAX_FILE_BYTES = 25 * 1024 * 1024; // v1.2: one bill per request
 
 // ── embed handshake (identical to ce-esco.js) ────────────────────────
 var isEmbedded = (function(){ try { return window.parent !== window; } catch (e) { return true; } })();
