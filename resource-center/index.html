@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energy Assessment Resource Center</title>
+<!--
+  Energy Assessment Resource Center - Step A/E (Instant Audit panel) v0.1, 2026-10-07.
+  Spec: UI_and_Middleware_Build_Spec.md. This page never scores and never writes its own result
+  words: it shows exactly what ce-web-to-sf-middleware returns (rule 1 and rule 5 of the spec).
+  Static, no build step. Netlify: publish directory = resource-center.
+-->
+<style>
+  :root{
+    --ink:#1f2a33; --muted:#5d6b76; --line:#d5dbe0; --bg:#ffffff; --panel:#f7f8f9;
+    --accent:#d9631e; --accent-dark:#b24f14; --focus:#1b5fa8;
+    --ok-bg:#e6f4ea; --ok-ink:#1e6b34; --warn-bg:#fff4d6; --warn-ink:#7a5b00;
+    --neutral-bg:#eceff1; --neutral-ink:#37474f; --err:#b3261e; --err-bg:#fdecea;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.2rem;margin:0 0 4px}
+  h3{font-size:1rem;margin:16px 0 6px}
+  p{margin:0 0 10px}
+  .lede{color:var(--muted);margin-bottom:16px}
+  .rule{height:3px;background:var(--accent);border:0;margin:10px 0 18px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+  .step .num{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:.8rem;font-weight:600;align-items:center;justify-content:center;margin-right:8px}
+  .step-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+  .step-head .title{font-weight:600}
+  .step-head .sel{color:var(--muted);flex:1;min-width:200px}
+  .linkbtn{background:none;border:0;color:var(--focus);text-decoration:underline;cursor:pointer;font:inherit;padding:2px 4px}
+  .grid2{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:860px){.grid2{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:3px}
+  input[type=text],input[type=email],input[type=tel],input[type=month],select,textarea{
+    width:100%;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    font:inherit;color:var(--ink)}
+  textarea{height:auto;padding:8px 10px}
+  input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
+  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+  @media (max-width:560px){.row3,.row2{grid-template-columns:1fr}}
+  .field{margin-bottom:10px}
+  .check{display:flex;gap:8px;align-items:flex-start;font-size:.95rem;color:var(--ink);margin:4px 0}
+  .check input{margin-top:4px}
+  .small{font-size:.85rem;color:var(--muted)}
+  button.primary{background:var(--accent);color:#fff;border:0;border-radius:8px;height:44px;padding:0 18px;
+    font:inherit;font-weight:600;cursor:pointer;width:100%}
+  button.primary:hover{background:var(--accent-dark)}
+  button.primary:disabled{background:#c9ced2;cursor:not-allowed}
+  button.secondary,a.secondary{display:inline-block;background:#fff;color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;height:38px;line-height:36px;padding:0 14px;font:inherit;cursor:pointer;text-decoration:none}
+  .tablewrap{overflow-x:auto;margin:8px 0}
+  table.grid{border-collapse:collapse;width:100%;min-width:560px}
+  table.grid th{font-size:.8rem;color:var(--muted);text-align:left;font-weight:500;padding:2px 4px}
+  table.grid td{padding:2px}
+  table.grid td.m{white-space:nowrap;padding:2px 6px;font-size:.9rem}
+  table.grid input{height:34px;font-size:.9rem;padding:0 6px;text-align:right}
+  table.grid tfoot td{border-top:1px solid var(--line);font-weight:600;padding:6px 6px;font-size:.9rem;text-align:right}
+  table.grid tfoot td:first-child{text-align:left}
+  table.grid input.bad{border-color:var(--err);background:var(--err-bg)}
+  .hint{font-size:.85rem;color:var(--warn-ink);background:var(--warn-bg);border-radius:8px;padding:6px 10px;margin:6px 0}
+  .okline{font-size:.85rem;color:var(--ok-ink);margin:6px 0}
+  .errbox{background:var(--err-bg);color:var(--err);border-radius:8px;padding:10px 12px;margin:10px 0}
+  .errbox ul{margin:6px 0 0 18px;padding:0}
+  .ferr{color:var(--err);font-size:.85rem;margin-top:2px}
+  .bad{border-color:var(--err)!important}
+  .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+  .results{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .chip{display:inline-block;font-weight:600;padding:5px 14px;border-radius:999px}
+  .chip.green{background:var(--ok-bg);color:var(--ok-ink)}
+  .chip.yellow{background:var(--warn-bg);color:var(--warn-ink)}
+  .chip.red,.chip.neutral{background:var(--neutral-bg);color:var(--neutral-ink)}
+  .spend{font-size:1.5rem;font-weight:700;margin:8px 0 0}
+  .basis{font-size:.85rem;color:var(--muted);margin-bottom:10px}
+  .results ul{padding-left:18px;margin:0 0 10px}
+  .results li{margin-bottom:6px}
+  .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .spinner{display:inline-block;width:16px;height:16px;border:3px solid #cfd5da;border-top-color:var(--accent);
+    border-radius:50%;animation:sp 0.9s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .disabledpanel{opacity:.75}
+  .lookup-list{list-style:none;margin:8px 0 0;padding:0}
+  .lookup-list li{margin:0}
+  .lookup-list button{width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:8px 12px;margin-bottom:6px;font:inherit;cursor:pointer}
+  .lookup-list button:hover{border-color:var(--accent)}
+  .lookup-list .addr{display:block;font-size:.85rem;color:var(--muted)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="s-title"></h1>
+  <p class="lede" id="s-lede"></p>
+  <hr class="rule">
+
+  <!-- STEP 1: institution and building -->
+  <section class="step" id="step1" aria-labelledby="step1-title">
+    <div class="step-head">
+      <span class="num">1</span>
+      <span class="title" id="step1-title"></span>
+      <span class="sel" id="step1-sel"></span>
+      <button class="linkbtn" id="step1-change" hidden></button>
+    </div>
+    <div id="step1-body">
+      <div id="lk-zip">
+        <div class="row2" style="margin-top:10px;align-items:end">
+          <div>
+            <label for="zip" id="s-zip-label"></label>
+            <input type="text" id="zip" inputmode="numeric" maxlength="10" autocomplete="postal-code">
+          </div>
+          <div><button class="secondary" id="zip-go" type="button"></button></div>
+        </div>
+      </div>
+      <div id="lk-status" class="small" role="status" aria-live="polite"></div>
+      <ul class="lookup-list" id="lk-accounts"></ul>
+      <ul class="lookup-list" id="lk-buildings"></ul>
+      <div id="lk-manual" hidden>
+        <h3 id="s-manual-title"></h3>
+        <div class="row2">
+          <div><label for="m-name" id="s-mname"></label><input type="text" id="m-name"></div>
+          <div><label for="m-addr" id="s-maddr"></label><input type="text" id="m-addr"></div>
+        </div>
+        <button class="secondary" id="m-use" type="button"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: panels -->
+  <div class="grid2" id="step2" hidden>
+    <!-- LEFT: Instant audit -->
+    <section class="panel" id="ia-panel" aria-labelledby="ia-title">
+      <h2 id="ia-title"></h2>
+      <p class="small" id="ia-sub"></p>
+
+      <div id="ia-form">
+        <div class="row3">
+          <div class="field">
+            <label for="sqft" id="s-sqft"></label>
+            <input type="text" id="sqft" inputmode="numeric" aria-describedby="sqft-note sqft-err">
+            <div class="small" id="sqft-note"></div>
+            <label class="check" id="county-wrap" hidden><input type="checkbox" id="county-use"><span id="s-county-use"></span></label>
+            <div class="ferr" id="sqft-err"></div>
+          </div>
+          <div class="field">
+            <label for="btype" id="s-btype"></label>
+            <select id="btype" aria-describedby="btype-err"></select>
+            <div class="ferr" id="btype-err"></div>
+          </div>
+          <div class="field">
+            <label for="hfuel" id="s-hfuel"></label>
+            <select id="hfuel" aria-describedby="hfuel-err"></select>
+            <div class="ferr" id="hfuel-err"></div>
+          </div>
+        </div>
+
+        <fieldset style="border:0;padding:0;margin:0 0 10px">
+          <legend class="small" id="s-reasons"></legend>
+          <div id="reasons"></div>
+        </fieldset>
+
+        <div class="field">
+          <label for="shared" id="s-shared"></label>
+          <input type="text" id="shared" maxlength="255">
+        </div>
+
+        <div id="month-controls" class="row2" style="align-items:end">
+          <div>
+            <label for="startmonth" id="s-startmonth"></label>
+            <input type="month" id="startmonth">
+          </div>
+          <div>
+            <label for="gasunit" id="s-gasunit"></label>
+            <select id="gasunit">
+              <option value="therms"></option><option value="ccf"></option>
+            </select>
+            <div class="small" id="s-gasunit-hint"></div>
+          </div>
+        </div>
+
+        <div id="monthly-block">
+          <div class="tablewrap">
+            <table class="grid" id="grid" aria-describedby="s-paste-hint">
+              <thead><tr>
+                <th id="th-month"></th><th id="th-ekwh"></th><th id="th-ecost"></th><th id="th-gus"></th><th id="th-gcost"></th>
+              </tr></thead>
+              <tbody id="grid-body"></tbody>
+              <tfoot><tr>
+                <td id="tot-label"></td><td id="tot-ekwh">0</td><td id="tot-ecost">$0</td><td id="tot-gus">0</td><td id="tot-gcost">$0</td>
+              </tr></tfoot>
+            </table>
+          </div>
+          <div class="small" id="s-paste-hint"></div>
+          <div id="rate-line" class="okline" aria-live="polite"></div>
+          <div id="hints" aria-live="polite"></div>
+          <div class="ferr" id="table-err"></div>
+          <button class="linkbtn" id="to-annual" type="button"></button>
+        </div>
+
+        <div id="annual-block" hidden>
+          <div class="row2">
+            <div><label for="ann-e" id="s-ann-e"></label><input type="text" id="ann-e" inputmode="decimal"><div class="ferr" id="ann-e-err"></div></div>
+            <div><label for="ann-g" id="s-ann-g"></label><input type="text" id="ann-g" inputmode="decimal"></div>
+          </div>
+          <button class="linkbtn" id="to-monthly" type="button"></button>
+        </div>
+
+        <h3 id="s-contact"></h3>
+        <div class="row3">
+          <div class="field"><label for="c-name" id="s-cname"></label><input type="text" id="c-name" autocomplete="name"><div class="ferr" id="c-name-err"></div></div>
+          <div class="field"><label for="c-email" id="s-cemail"></label><input type="email" id="c-email" autocomplete="email"><div class="ferr" id="c-email-err"></div></div>
+          <div class="field"><label for="c-phone" id="s-cphone"></label><input type="tel" id="c-phone" autocomplete="tel"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="consent"><span id="s-consent"></span></label>
+        <div class="ferr" id="consent-err"></div>
+
+        <div class="hp" aria-hidden="true"><label>Website<input type="text" id="website" tabindex="-1" autocomplete="off" value=""></label></div>
+
+        <div id="errsummary" class="errbox" role="alert" hidden></div>
+        <button class="primary" id="submit" type="button"></button>
+      </div>
+
+      <div id="working" class="results" role="status" aria-live="polite" hidden>
+        <span class="spinner"></span><span id="s-working"></span>
+      </div>
+
+      <div id="queued" class="results" role="status" aria-live="polite" hidden>
+        <p id="queued-msg"></p>
+        <div class="buttons"><button class="secondary" id="q-again" type="button"></button></div>
+      </div>
+
+      <div id="results" class="results" aria-live="polite" hidden></div>
+    </section>
+
+    <!-- RIGHT: Energy assessments (wired in a later step) -->
+    <section class="panel disabledpanel" id="ea-panel" aria-labelledby="ea-title" tabindex="-1">
+      <h2 id="ea-title"></h2>
+      <p class="small" id="ea-sub"></p>
+      <div style="border:1px dashed var(--line);border-radius:8px;padding:22px 12px;text-align:center;background:#fff">
+        <div id="ea-drop"></div>
+        <div class="small" id="ea-drop-note"></div>
+      </div>
+      <h3 id="ea-choose"></h3>
+      <label class="check"><input type="checkbox" id="ea-solar" disabled><span id="ea-solar-l"></span></label>
+      <label class="check"><input type="checkbox" id="ea-desk" disabled><span id="ea-desk-l"></span></label>
+      <label class="check small"><input type="checkbox" disabled><span id="ea-proc-l"></span></label>
+      <p class="small" id="ea-soon" style="margin-top:12px"></p>
+    </section>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ------------------------------------------------------------------ config */
+var API = 'https://ce-web-to-sf-middleware-57609cfb4bf9.herokuapp.com';
+var SHOW_LIGHT_WORD = false;   // Ian has not decided; the chip shows the headline text only.
+
+/* ------------------------------------------------------------------ strings (UI-owned words) */
+var S = {
+  title: 'Energy Assessment Resource Center',
+  lede: 'Find your institution and building, then get a quick first look from your own figures, or upload your bills for a fuller assessment.',
+  step1: 'Your institution and building',
+  zip: 'ZIP code of the institution', zipGo: 'Find my institution',
+  change: 'Change', addBuilding: 'My building is not listed',
+  searching: 'Searching...', noAccounts: 'We did not find an institution for that ZIP code. Check the ZIP code and try again.',
+  pickAccount: 'Choose your institution:', pickBuilding: 'Choose the building:',
+  noBuildings: 'No buildings are on file for this institution yet. Add yours below.',
+  manualTitle: 'Add your building', mName: 'Building name', mAddr: 'Street address',
+  useManual: 'Use this building', lookupFail: 'We could not reach the lookup. Try again in a moment.',
+  iaTitle: 'Instant audit', iaSub: 'No bills handy? Enter your numbers and get a first look in seconds.',
+  sqft: 'Total square feet', sqftCounty: 'County record: {n} sq ft (reference only)', useCounty: 'Use the county figure',
+  btype: 'Building type', hfuel: 'Heating fuel', reasons: 'Reasons to look (optional)',
+  shared: 'Shared meters note (optional)', startMonth: 'First of the 12 months',
+  gasUnit: 'Gas unit', gasUnitHint: 'Your bill says therms or ccf',
+  thMonth: 'Month', thEkwh: 'Electric: kWh', thEcost: 'Electric: cost ($)', thGus: 'Gas: usage', thGcost: 'Gas: cost ($)',
+  total: 'Total',
+  pasteHint: 'Tip: copy rows from a spreadsheet and paste into the first cell to fill the table.',
+  toAnnual: 'I only know the annual totals', toMonthly: 'Enter month by month instead',
+  annE: 'Annual electric cost ($)', annG: 'Annual gas cost ($, optional)',
+  contact: 'Your contact details', cName: 'Name', cEmail: 'Email', cPhone: 'Phone (optional)',
+  consent: 'I agree that Catholic Energies may store and use these figures to follow up with me about my building.',
+  submit: 'Get instant audit', working: 'Working on your result',
+  fewMonths: 'With fewer than 12 months, the result is approximate.',
+  needSix: 'Enter at least six months of electric figures (usage and cost).',
+  oneCell: 'Enter the {what} for this month, or clear the other cell.',
+  failed: 'Something went wrong and your numbers were not saved. Try again.',
+  busy: 'Too many requests from this connection. Try again in a few minutes.',
+  reportBtn: 'Download report', reportPrep: 'Preparing your report', checkBills: 'Check it with your bills',
+  another: 'Start another building', perYear: '{n} a year',
+  eaTitle: 'Energy assessments', eaSub: 'Have your bills? Upload them and choose what you would like.',
+  eaDrop: 'Drop your bills here', eaNote: 'Up to 36 PDFs, filed to your institution\'s record',
+  eaChoose: 'What would you like?', eaSolar: 'Solar assessment', eaDesk: 'Desk audit', eaProc: 'Procurement (coming soon)',
+  eaSoon: 'Bill upload on this page is coming in the next update. For now, use the existing Energy Screening and Solar Assessment forms.',
+  hintKwh: 'That works out to ${r} per kWh, which is outside the usual range. Check the kWh and cost columns.',
+  hintTherm: 'That works out to ${r} per therm, which is outside the usual range. Check the usage and cost columns.',
+  hintNoGas: 'You said gas heats this building, but no gas figures are entered. The result may understate your energy use.',
+  hintOilSteam: 'We can\'t include oil or steam yet.',
+  hintSpike: '{m} looks much higher than the other months. Is that right?',
+  rateOk: '${r} per kWh. Looks right.'
+};
+var BTYPES = [['','Choose...'],['worship','Worship'],['school','School'],['office-chancery','Office or chancery'],
+  ['residence','Residence'],['hall-gym','Hall or gym'],['mixed','Mixed use']];
+var HFUELS = [['','Choose...'],['gas','Natural gas'],['electric','Electric'],['oil','Oil'],['steam','Steam'],['none','None']];
+var REASONS = [['capital','Equipment replacement or renovation is planned or needed'],
+  ['comfort','Ongoing comfort, equipment or high-bill complaints'],['deadline','A grant, requirement or budget deadline applies']];
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ------------------------------------------------------------------ helpers */
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, text){
+  var e = document.createElement(tag);
+  if (attrs) Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); });
+  if (text != null) e.textContent = text;
+  return e;
+}
+function fill(str, map){ return str.replace(/\{(\w+)\}/g, function(_, k){ return map[k] != null ? map[k] : ''; }); }
+function fmtInt(n){ return Math.round(n).toLocaleString('en-US'); }
+function fmtMoney(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+function uuid(){
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+    var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8); return v.toString(16); });
+}
+// null = blank, NaN = not a number, else number. Strips $, spaces and thousands commas.
+function parseNum(s){
+  if (s == null) return null;
+  var t = String(s).replace(/[$\s]/g,'').replace(/,/g,'');
+  if (t === '') return null;
+  return /^-?\d*\.?\d+$/.test(t) ? Number(t) : NaN;
+}
+function postHeight(){
+  var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  try { parent.postMessage({type:'ceEscoHeight', height:h}, '*'); } catch(e){}
+}
+function scrollParentTo(node){
+  var y = node.getBoundingClientRect().top + window.scrollY;
+  try { parent.postMessage({type:'ceEscoScroll', top:y}, '*'); } catch(e){}
+  node.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* ------------------------------------------------------------------ static text */
+function setText(id, t){ $(id).textContent = t; }
+(function initText(){
+  document.title = S.title;
+  setText('s-title', S.title); setText('s-lede', S.lede);
+  setText('step1-title', S.step1); setText('s-zip-label', S.zip); setText('zip-go', S.zipGo);
+  setText('step1-change', S.change);
+  setText('s-manual-title', S.manualTitle); setText('s-mname', S.mName); setText('s-maddr', S.mAddr); setText('m-use', S.useManual);
+  setText('ia-title', S.iaTitle); setText('ia-sub', S.iaSub);
+  setText('s-sqft', S.sqft); setText('s-county-use', S.useCounty);
+  setText('s-btype', S.btype); setText('s-hfuel', S.hfuel); setText('s-reasons', S.reasons);
+  setText('s-shared', S.shared); setText('s-startmonth', S.startMonth);
+  setText('s-gasunit', S.gasUnit); setText('s-gasunit-hint', S.gasUnitHint);
+  var opts = $('gasunit').options; opts[0].textContent = 'Therms'; opts[1].textContent = 'CCF';
+  setText('th-month', S.thMonth); setText('th-ekwh', S.thEkwh); setText('th-ecost', S.thEcost);
+  setText('th-gus', S.thGus); setText('th-gcost', S.thGcost); setText('tot-label', S.total);
+  setText('s-paste-hint', S.pasteHint); setText('to-annual', S.toAnnual); setText('to-monthly', S.toMonthly);
+  setText('s-ann-e', S.annE); setText('s-ann-g', S.annG);
+  setText('s-contact', S.contact); setText('s-cname', S.cName); setText('s-cemail', S.cEmail); setText('s-cphone', S.cPhone);
+  setText('s-consent', S.consent); setText('submit', S.submit); setText('s-working', S.working);
+  setText('ea-title', S.eaTitle); setText('ea-sub', S.eaSub); setText('ea-drop', S.eaDrop); setText('ea-drop-note', S.eaNote);
+  setText('ea-choose', S.eaChoose); setText('ea-solar-l', S.eaSolar); setText('ea-desk-l', S.eaDesk);
+  setText('ea-proc-l', S.eaProc); setText('ea-soon', S.eaSoon);
+  BTYPES.forEach(function(o){ $('btype').appendChild(el('option',{value:o[0]},o[1])); });
+  HFUELS.forEach(function(o){ $('hfuel').appendChild(el('option',{value:o[0]},o[1])); });
+  REASONS.forEach(function(r){
+    var lab = el('label',{'class':'check'});
+    var cb = el('input',{type:'checkbox',value:r[0],name:'reason'});
+    lab.appendChild(cb); lab.appendChild(el('span',null,r[1])); $('reasons').appendChild(lab);
+  });
+})();
+
+/* ------------------------------------------------------------------ state */
+var state = { zip:'', account:null, building:null, mode:'monthly', submissionId:null, busy:false, pollTimer:null };
+
+/* ------------------------------------------------------------------ STEP 1: lookup */
+function getJSON(path){
+  return fetch(API + path).then(function(r){
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  });
+}
+function lkStatus(t){ $('lk-status').textContent = t || ''; }
+function clearLists(){ $('lk-accounts').textContent=''; $('lk-buildings').textContent=''; }
+
+$('zip-go').addEventListener('click', findAccounts);
+$('zip').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); findAccounts(); } });
+
+function findAccounts(){
+  var zip = $('zip').value.replace(/\D/g,'').slice(0,5);
+  if (zip.length !== 5){ lkStatus(S.noAccounts); return; }
+  state.zip = zip; clearLists(); $('lk-manual').hidden = true; lkStatus(S.searching);
+  getJSON('/accounts?zip=' + encodeURIComponent(zip)).then(function(d){
+    var list = (d && d.accounts) || [];
+    if (!list.length){ lkStatus(S.noAccounts); postHeight(); return; }
+    lkStatus(S.pickAccount);
+    list.forEach(function(a){
+      var li = el('li'); var b = el('button',{type:'button'}); b.appendChild(document.createTextNode(a.name || ''));
+      if (a.address){ b.appendChild(el('span',{'class':'addr'},a.address)); }
+      b.addEventListener('click', function(){ pickAccount(a); });
+      li.appendChild(b); $('lk-accounts').appendChild(li);
+    });
+    postHeight();
+  }).catch(function(){ lkStatus(S.lookupFail); });
+}
+
+function pickAccount(a){
+  state.account = a; clearLists(); lkStatus(S.searching);
+  getJSON('/buildings?accountId=' + encodeURIComponent(a.id)).then(function(d){
+    var list = (d && d.buildings) || [];
+    lkStatus(list.length ? S.pickBuilding : S.noBuildings);
+    list.forEach(function(b){
+      var li = el('li'); var btn = el('button',{type:'button'}); btn.appendChild(document.createTextNode(b.name || ''));
+      if (b.address){ btn.appendChild(el('span',{'class':'addr'},b.address)); }
+      btn.addEventListener('click', function(){ pickBuilding(b); });
+      li.appendChild(btn); $('lk-buildings').appendChild(li);
+    });
+    var li2 = el('li'); var add = el('button',{type:'button'},S.addBuilding);
+    add.addEventListener('click', function(){ $('lk-manual').hidden = false; $('m-name').focus(); postHeight(); });
+    li2.appendChild(add); $('lk-buildings').appendChild(li2);
+    if (!list.length){ $('lk-manual').hidden = false; }
+    postHeight();
+  }).catch(function(){ lkStatus(S.lookupFail); });
+}
+
+$('m-use').addEventListener('click', function(){
+  var n = $('m-name').value.trim(), ad = $('m-addr').value.trim();
+  if (!n){ $('m-name').classList.add('bad'); $('m-name').focus(); return; }
+  $('m-name').classList.remove('bad');
+  pickBuilding({id:'', name:n, address:ad, type:'', sqft:null, sqft_county:false, manual:true});
+});
+
+function pickBuilding(b){
+  state.building = b;
+  $('step1-body').hidden = true;
+  $('step1-sel').textContent = (state.account ? state.account.name : '') + ' \u00b7 ' + b.name + (b.address ? ' \u00b7 ' + b.address : '');
+  $('step1-change').hidden = false;
+  $('step2').hidden = false;
+  // county figure (reference only)
+  var note = '';
+  $('county-wrap').hidden = true; $('county-use').checked = false;
+  if (b.sqft_county && typeof b.sqft === 'number'){
+    note = fill(S.sqftCounty, {n: fmtInt(b.sqft)});
+    $('county-wrap').hidden = false;
+  }
+  setText('sqft-note', note);
+  $('sqft').value = '';
+  resetForm(true);
+  postHeight();
+  $('sqft').focus();
+}
+
+$('step1-change').addEventListener('click', function(){
+  state.building = null; state.account = null;
+  $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
+  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true;
+  postHeight();
+});
+$('county-use').addEventListener('change', function(){
+  if (this.checked && state.building && typeof state.building.sqft === 'number') $('sqft').value = fmtInt(state.building.sqft);
+  edited();
+});
+$('sqft').addEventListener('blur', function(){
+  var n = parseNum(this.value); if (n != null && !isNaN(n)) this.value = fmtInt(n);
+});
+
+/* ------------------------------------------------------------------ the table */
+var rows = [];   // 12 month descriptors: {key:'2025-06', label:'Jun 2025'}
+function defaultStart(){
+  var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 12);   // 12 completed months back from last completed
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function buildRows(){
+  var v = $('startmonth').value || defaultStart();
+  var y = parseInt(v.slice(0,4),10), m = parseInt(v.slice(5,7),10) - 1;
+  rows = [];
+  for (var i = 0; i < 12; i++){
+    var yy = y + Math.floor((m + i) / 12), mm = (m + i) % 12;
+    rows.push({key: yy + '-' + String(mm+1).padStart(2,'0'), label: MONTHS[mm] + ' ' + yy});
+  }
+  var tb = $('grid-body'); var old = readCells(); tb.textContent = '';
+  rows.forEach(function(r, i){
+    var tr = el('tr'); tr.appendChild(el('td',{'class':'m'}, r.label));
+    for (var c = 0; c < 4; c++){
+      var td = el('td'); var inp = el('input',{type:'text',inputmode:'decimal','data-r':i,'data-c':c,
+        'aria-label': r.label + ', ' + [S.thEkwh,S.thEcost,S.thGus,S.thGcost][c], autocomplete:'off'});
+      if (old[i] && old[i][c] != null) inp.value = old[i][c];
+      td.appendChild(inp); tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  });
+  refreshTotals();
+}
+function readCells(){
+  var out = [], inputs = $('grid-body').querySelectorAll('input');
+  for (var k = 0; k < inputs.length; k++){
+    var r = +inputs[k].getAttribute('data-r'), c = +inputs[k].getAttribute('data-c');
+    (out[r] = out[r] || [])[c] = inputs[k].value;
+  }
+  return out;
+}
+function cell(r, c){ return $('grid-body').querySelector('input[data-r="'+r+'"][data-c="'+c+'"]'); }
+
+$('startmonth').addEventListener('change', function(){ buildRows(); edited(); });
+$('gasunit').addEventListener('change', function(){ refreshTotals(); edited(); });
+
+// Enter moves down a column; paste fills the grid.
+$('grid-body').addEventListener('keydown', function(e){
+  if (e.key !== 'Enter' || !e.target.matches('input')) return;
+  e.preventDefault();
+  var r = +e.target.getAttribute('data-r'), c = +e.target.getAttribute('data-c');
+  var nxt = cell(Math.min(r + 1, 11), c); if (nxt) nxt.focus();
+});
+$('grid-body').addEventListener('input', function(){ refreshTotals(); edited(); });
+$('grid-body').addEventListener('paste', function(e){
+  var t = (e.clipboardData || window.clipboardData).getData('text');
+  if (!t || !e.target.matches('input')) return;
+  var lines = t.replace(/\r/g,'').split('\n').filter(function(l){ return l.trim() !== ''; });
+  if (lines.length === 1 && lines[0].indexOf('\t') < 0 && !/[;]|,\s/.test(lines[0])) return; // single plain value: normal paste
+  e.preventDefault();
+  var r0 = +e.target.getAttribute('data-r'), c0 = +e.target.getAttribute('data-c'), r = r0;
+  lines.forEach(function(line){
+    // Tabs first. Otherwise split on ";" or ", " (comma+space) so thousands commas like 18,660 survive.
+    var parts = line.indexOf('\t') >= 0 ? line.split('\t') : line.split(/;|,\s+|\s{2,}/);
+    parts = parts.map(function(p){ return p.trim(); });
+    var nums = parts.map(parseNum);
+    if (nums.every(function(n){ return n == null || isNaN(n); })) return;   // header row: skip
+    if (parts.length === 5 && (nums[0] == null || isNaN(nums[0]))){ parts = parts.slice(1); }   // leading month label
+    if (r > 11) return;
+    parts.forEach(function(p, j){
+      var c = c0 + j; if (c > 3) return;
+      var inp = cell(r, c); if (inp) inp.value = p.replace(/^\$/,'');
+    });
+    r++;
+  });
+  refreshTotals(); edited();
+});
+
+function gasFactor(){ return $('gasunit').value === 'ccf' ? 1.037 : 1; }
+function sums(){
+  var cells = readCells(), t = {ek:0, ec:0, gu:0, gc:0, eRows:0, ekPaired:0, ecPaired:0, gPaired:0, guPaired:0, gcPaired:0, months:[]};
+  for (var i = 0; i < 12; i++){
+    var c = cells[i] || [];
+    var ek = parseNum(c[0]), ec = parseNum(c[1]), gu = parseNum(c[2]), gc = parseNum(c[3]);
+    if (ek != null && !isNaN(ek)) t.ek += ek;
+    if (ec != null && !isNaN(ec)) t.ec += ec;
+    if (gu != null && !isNaN(gu)) t.gu += gu;
+    if (gc != null && !isNaN(gc)) t.gc += gc;
+    if (ek != null && ec != null && !isNaN(ek) && !isNaN(ec)){ t.eRows++; t.ekPaired += ek; t.ecPaired += ec; t.months.push({label:rows[i].label, ek:ek}); }
+    if (gu != null && gc != null && !isNaN(gu) && !isNaN(gc)){ t.gPaired++; t.guPaired += gu; t.gcPaired += gc; }
+  }
+  return t;
+}
+function refreshTotals(){
+  var t = sums();
+  $('tot-ekwh').textContent = fmtInt(t.ek); $('tot-ecost').textContent = fmtMoney(t.ec);
+  $('tot-gus').textContent = fmtInt(t.gu); $('tot-gcost').textContent = fmtMoney(t.gc);
+  // soft hints (never block)
+  var hints = [], rate = '';
+  if (t.ekPaired > 0){
+    var r = t.ecPaired / t.ekPaired;
+    if (r < 0.03 || r > 0.60) hints.push(fill(S.hintKwh, {r: r.toFixed(3)}));
+    else rate = fill(S.rateOk, {r: r.toFixed(3)});
+  }
+  if (t.guPaired > 0){
+    var gr = t.gcPaired / (t.guPaired * gasFactor());
+    if (gr < 0.30 || gr > 3.00) hints.push(fill(S.hintTherm, {r: gr.toFixed(2)}));
+  }
+  var hf = $('hfuel').value;
+  if (hf === 'gas' && t.gu === 0 && t.gc === 0) hints.push(S.hintNoGas);
+  if ((hf === 'oil' || hf === 'steam')) hints.push(S.hintOilSteam);
+  if (t.months.length >= 4){
+    var sorted = t.months.map(function(m){return m.ek;}).sort(function(a,b){return a-b;});
+    var med = sorted[Math.floor(sorted.length/2)];
+    if (med > 0) t.months.forEach(function(m){ if (m.ek > 3*med) hints.push(fill(S.hintSpike, {m: m.label.split(' ')[0]})); });
+  }
+  if (t.eRows > 0 && t.eRows < 12) hints.push(S.fewMonths);
+  setText('rate-line', rate);
+  var hb = $('hints'); hb.textContent = '';
+  hints.forEach(function(h){ hb.appendChild(el('div',{'class':'hint'},h)); });
+  postHeight();
+}
+$('hfuel').addEventListener('change', function(){ refreshTotals(); edited(); });
+
+/* annual / monthly mode */
+$('to-annual').addEventListener('click', function(){ state.mode='annual'; $('monthly-block').hidden=true; $('month-controls').hidden=true; $('annual-block').hidden=false; edited(); postHeight(); });
+$('to-monthly').addEventListener('click', function(){ state.mode='monthly'; $('monthly-block').hidden=false; $('month-controls').hidden=false; $('annual-block').hidden=true; edited(); postHeight(); });
+
+/* ------------------------------------------------------------------ validation + payload */
+var errs;
+function addErr(field, id, msg){ errs.push({field:field, id:id, message:msg}); }
+function clearErrs(){
+  ['sqft-err','btype-err','hfuel-err','table-err','ann-e-err','c-name-err','c-email-err','consent-err'].forEach(function(i){ setText(i,''); });
+  var bad = document.querySelectorAll('.bad'); for (var i=0;i<bad.length;i++) bad[i].classList.remove('bad');
+  $('errsummary').hidden = true; $('errsummary').textContent = '';
+}
+function showErrs(list){
+  clearErrs();
+  var ul = el('ul');
+  list.forEach(function(e){
+    ul.appendChild(el('li',null,e.message));
+    if (e.id){
+      var inl = $(e.id + '-err'); if (inl) inl.textContent = e.message;
+      var f = $(e.id); if (f) f.classList.add('bad');
+    }
+  });
+  var box = $('errsummary'); box.appendChild(el('strong',null,'Please fix the following:')); box.appendChild(ul); box.hidden = false;
+  var first = list[0] && list[0].id && $(list[0].id); if (first) first.focus(); else box.scrollIntoView({block:'center'});
+  postHeight();
+}
+function validate(){
+  errs = [];
+  var sq = parseNum($('sqft').value);
+  if (sq == null || isNaN(sq) || sq < 1 || sq > 5000000 || Math.round(sq) !== sq) addErr('facts.sqft_total','sqft','Enter the total square feet as a whole number from 1 to 5,000,000.');
+  if (!$('btype').value) addErr('facts.building_type','btype','Choose a building type.');
+  if (!$('hfuel').value) addErr('facts.heating_fuel','hfuel','Choose the heating fuel.');
+  if (state.mode === 'annual'){
+    var ae = parseNum($('ann-e').value);
+    if (ae == null || isNaN(ae) || ae <= 0 || ae > 10000000) addErr('annual.electric_cost','ann-e','Enter the annual electric cost.');
+    var ag = parseNum($('ann-g').value);
+    if (ag != null && (isNaN(ag) || ag < 0 || ag > 10000000)) addErr('annual.gas_cost','ann-g','Enter the annual gas cost as a number, or leave it blank.');
+  } else {
+    var cells = readCells(), complete = 0;
+    for (var i = 0; i < 12; i++){
+      var c = cells[i] || [];
+      var pairs = [[0,1,'kWh','cost'],[2,3,'gas usage','gas cost']];
+      pairs.forEach(function(p, pi){
+        var u = parseNum(c[p[0]]), k = parseNum(c[p[1]]);
+        var bad = false;
+        [[u,p[0]],[k,p[1]]].forEach(function(v){
+          if (v[0] != null && isNaN(v[0])){ bad = true; var x = cell(i, v[1]); if (x) x.classList.add('bad'); }
+        });
+        if (bad){ addErr('row'+i, null, rows[i].label + ': enter numbers only.'); return; }
+        var maxU = 100000000, maxC = 10000000;
+        if ((u != null && (u < 0 || u > maxU)) || (k != null && (k < 0 || k > maxC))){
+          addErr('row'+i, null, rows[i].label + ': a figure is outside the allowed range.'); return; }
+        if ((u == null) !== (k == null)){
+          var what = u == null ? p[2] : p[3];
+          addErr('row'+i, null, rows[i].label + ': ' + fill(S.oneCell, {what: what}));
+          var x2 = cell(i, u == null ? p[0] : p[1]); if (x2) x2.classList.add('bad');
+          return;
+        }
+        if (pi === 0 && u != null && k != null) complete++;
+      });
+    }
+    if (complete < 6) addErr('accounts','table', S.needSix);
+  }
+  var nm = $('c-name').value.trim(); if (!nm) addErr('contact.name','c-name','Enter your name.');
+  var em = $('c-email').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) addErr('contact.email','c-email','Enter an email address we can reach you at.');
+  if (!$('consent').checked) addErr('consent','consent','Please tick the box to agree.');
+  return errs;
+}
+function buildPayload(){
+  var b = state.building, acc = state.account;
+  var reasons = []; var rc = document.querySelectorAll('input[name=reason]:checked'); for (var i=0;i<rc.length;i++) reasons.push(rc[i].value);
+  var useCounty = $('county-use').checked && !$('county-wrap').hidden;
+  var p = {
+    submission_id: state.submissionId,
+    mode: state.mode,
+    building: {account_id: acc ? acc.id : '', building_id: b.id || '', name: b.name || '', address: b.address || '', zip: state.zip},
+    facts: {
+      sqft_total: parseNum($('sqft').value),
+      sqft_county: (b.sqft_county && typeof b.sqft === 'number') ? b.sqft : null,
+      sqft_confirmed_county: !!useCounty,
+      building_type: $('btype').value, heating_fuel: $('hfuel').value,
+      reasons: reasons, shared_meter_note: $('shared').value.trim()
+    },
+    contact: {name: $('c-name').value.trim(), email: $('c-email').value.trim(), phone: $('c-phone').value.trim()},
+    consent: true,
+    website: $('website').value
+  };
+  if (state.mode === 'annual'){
+    var ag = parseNum($('ann-g').value);
+    p.annual = {electric_cost: parseNum($('ann-e').value), gas_cost: ag == null ? 0 : ag};
+  } else {
+    var cells = readCells(), er = [], gr = [];
+    for (var i2 = 0; i2 < 12; i2++){
+      var c = cells[i2] || [];
+      var ek = parseNum(c[0]), ec = parseNum(c[1]), gu = parseNum(c[2]), gc = parseNum(c[3]);
+      if (ek != null && ec != null) er.push({month: rows[i2].key, usage: ek, cost: ec});
+      if (gu != null && gc != null) gr.push({month: rows[i2].key, usage: gu, cost: gc});
+    }
+    p.accounts = [{label:'Electric 1', fuel:'electric', unit:'kwh', rows: er}];
+    if (gr.length) p.accounts.push({label:'Gas 1', fuel:'gas', unit: $('gasunit').value, rows: gr});
+  }
+  return p;
+}
+
+/* ------------------------------------------------------------------ submit + states */
+function edited(){ if (!state.busy) state.submissionId = null; }   // new data, new attempt
+function show(which){
+  $('ia-form').hidden = which !== 'form';
+  $('working').hidden = which !== 'working';
+  $('queued').hidden = which !== 'queued';
+  $('results').hidden = which !== 'results';
+  postHeight();
+}
+$('submit').addEventListener('click', function(){
+  var e = validate();
+  if (e.length){ showErrs(e); return; }
+  clearErrs();
+  if (!state.submissionId) state.submissionId = uuid();   // reused on retry: the middleware treats it as an idempotency key
+  var payload = buildPayload();
+  state.busy = true; $('submit').disabled = true; show('working');
+  var ctl = new AbortController(); var to = setTimeout(function(){ ctl.abort(); }, 30000);
+  fetch(API + '/instant-audit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: ctl.signal})
+  .then(function(r){ return r.json().catch(function(){ return null; }).then(function(d){ return {status:r.status, body:d}; }); })
+  .then(function(res){
+    clearTimeout(to); state.busy = false; $('submit').disabled = false;
+    if (res.status === 429){ show('form'); showErrs([{message:S.busy}]); return; }
+    if (res.status === 400 && res.body && res.body.errors){
+      show('form'); showErrs(res.body.errors.map(function(x){ return {message:x.message || 'Check this entry.', id:fieldToId(x.field)}; })); return; }
+    if (res.status >= 200 && res.status < 300 && res.body){
+      if (res.body.status === 'complete' && res.body.result){ renderResult(res.body); return; }
+      if (res.body.status === 'queued'){ renderQueued(res.body); return; }
+    }
+    show('form'); showErrs([{message:S.failed}]);
+  })
+  .catch(function(){
+    clearTimeout(to); state.busy = false; $('submit').disabled = false;
+    show('form'); showErrs([{message:S.failed}]);
+  });
+});
+function fieldToId(f){
+  if (!f) return null;
+  if (f === 'facts.sqft_total') return 'sqft';
+  if (f === 'facts.building_type') return 'btype';
+  if (f === 'facts.heating_fuel') return 'hfuel';
+  if (f === 'contact.name') return 'c-name';
+  if (f === 'contact.email') return 'c-email';
+  if (f === 'consent') return 'consent';
+  if (f.indexOf('annual.electric') === 0) return 'ann-e';
+  return null;
+}
+
+/* queued: show the middleware's message, then poll for up to 60 s */
+function stopPoll(){ if (state.pollTimer){ clearInterval(state.pollTimer); state.pollTimer = null; } }
+function renderQueued(body){
+  setText('queued-msg', body.message || '');
+  setText('q-again', S.another); show('queued'); scrollParentTo($('queued'));
+  stopPoll(); var started = Date.now();
+  state.pollTimer = setInterval(function(){
+    if (Date.now() - started > 60000){ stopPoll(); return; }
+    fetch(API + '/instant-audit/' + encodeURIComponent(state.submissionId))
+      .then(function(r){ if (r.status === 404){ stopPoll(); return null; } return r.json(); })
+      .then(function(d){ if (d && d.status === 'complete' && d.result){ stopPoll(); renderResult(d); } })
+      .catch(function(){});
+  }, 3000);
+}
+$('q-again').addEventListener('click', startAnother);
+
+/* result: everything shown comes from the JSON; written with textContent only */
+function renderResult(body){
+  stopPoll();
+  var r = body.result, box = $('results'); box.textContent = '';
+  var light = (r.light === 'green' || r.light === 'yellow') ? r.light : 'red';
+  var chip = el('span',{'class':'chip ' + light}, (SHOW_LIGHT_WORD ? (r.light + ': ') : '') + (r.headline || ''));
+  box.appendChild(chip);
+  if (typeof r.annual_spend === 'number') box.appendChild(el('div',{'class':'spend'}, fill(S.perYear, {n: fmtMoney(r.annual_spend)})));
+  if (r.basis_label) box.appendChild(el('div',{'class':'basis'}, r.basis_label));
+  var sm = r.summary || {};
+  if (sm.used && sm.used.length){
+    var ul = el('ul');
+    sm.used.forEach(function(u){ var li = el('li'); li.appendChild(el('strong',null,(u.lead || '') + ' ')); li.appendChild(document.createTextNode(u.text || '')); ul.appendChild(li); });
+    box.appendChild(ul);
+  }
+  if (sm.means) box.appendChild(el('p',null,sm.means));
+  if (sm.next) box.appendChild(el('p',null,sm.next));
+  if (sm.note) box.appendChild(el('p',{'class':'small'},sm.note));
+  if (r.honesty_line) box.appendChild(el('p',{'class':'small'},r.honesty_line));
+  var btns = el('div',{'class':'buttons'}); box.appendChild(btns);
+  var slot = el('span'); btns.appendChild(slot);
+  renderReport(body.report, slot, body.submission_id || state.submissionId);
+  var cb = el('button',{type:'button','class':'secondary'},S.checkBills);
+  cb.addEventListener('click', function(){ var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
+  btns.appendChild(cb);
+  var again = el('button',{type:'button','class':'secondary'},S.another); again.addEventListener('click', startAnother); btns.appendChild(again);
+  show('results'); scrollParentTo(box);
+}
+function renderReport(rep, slot, id){
+  slot.textContent = '';
+  if (!rep || rep.state === 'unavailable') return;
+  if (rep.state === 'ready' && rep.url && /^https:\/\//.test(rep.url)){
+    var a = el('a',{href:rep.url,'class':'secondary',download: rep.filename || 'Instant_Audit_Report.pdf',rel:'noopener'}, S.reportBtn);
+    slot.appendChild(a); return;
+  }
+  if (rep.state === 'preparing'){
+    slot.appendChild(el('span',{'class':'small'}, S.reportPrep));
+    var started = Date.now();
+    var t = setInterval(function(){
+      if (Date.now() - started > 60000){ clearInterval(t); slot.textContent = ''; return; }
+      fetch(API + '/instant-audit/' + encodeURIComponent(id)).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+        if (d && d.report && d.report.state !== 'preparing'){ clearInterval(t); renderReport(d.report, slot, id); postHeight(); }
+      }).catch(function(){});
+    }, 3000);
+  }
+}
+
+/* ------------------------------------------------------------------ reset */
+function resetForm(keepBuilding){
+  stopPoll(); state.submissionId = null; state.busy = false; $('submit').disabled = false;
+  state.mode = 'monthly'; $('monthly-block').hidden = false; $('month-controls').hidden = false; $('annual-block').hidden = true;
+  ['btype','hfuel'].forEach(function(i){ $(i).value = ''; });
+  ['shared','ann-e','ann-g','c-name','c-email','c-phone','website'].forEach(function(i){ $(i).value = ''; });
+  $('consent').checked = false; $('county-use').checked = false;
+  var rc = document.querySelectorAll('input[name=reason]'); for (var i=0;i<rc.length;i++) rc[i].checked = false;
+  $('startmonth').value = defaultStart(); $('gasunit').value = 'therms';
+  // map the building's recorded type to our list only when it matches exactly (never guess)
+  if (keepBuilding && state.building && state.building.type){
+    var m = {'Worship':'worship','School':'school','Office':'office-chancery','Residence':'residence'}[state.building.type];
+    if (m) $('btype').value = m;
+  }
+  $('grid-body').textContent = ''; buildRows(); clearErrs(); show('form');
+}
+function startAnother(){
+  resetForm(false);
+  state.building = null; state.account = null;
+  $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
+  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('zip').value = '';
+  scrollParentTo($('step1')); postHeight();
+}
+['sqft','btype','shared','ann-e','ann-g','c-name','c-email','c-phone','consent'].forEach(function(i){
+  $(i).addEventListener('input', edited); $(i).addEventListener('change', edited);
+});
+
+/* ------------------------------------------------------------------ init */
+$('startmonth').value = defaultStart();
+buildRows();
+if (window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
+window.addEventListener('load', postHeight);
+</script>
+</body>
+</html>
