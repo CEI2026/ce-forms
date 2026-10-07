@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Energy Assessment Resource Center</title>
 <!--
-  Energy Assessment Resource Center - Step A/E (Instant Audit panel) v0.1, 2026-10-07.
+  Energy Assessment Resource Center - Instant Audit panel + bill upload (Desk audit) v0.2, 2026-10-07.
   Spec: UI_and_Middleware_Build_Spec.md. This page never scores and never writes its own result
   words: it shows exactly what ce-web-to-sf-middleware returns (rule 1 and rule 5 of the spec).
   Static, no build step. Netlify: publish directory = resource-center.
@@ -92,6 +92,16 @@
     padding:8px 12px;margin-bottom:6px;font:inherit;cursor:pointer}
   .lookup-list button:hover{border-color:var(--accent)}
   .lookup-list .addr{display:block;font-size:.85rem;color:var(--muted)}
+
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:20px 12px;text-align:center;background:#fff;cursor:pointer}
+  .drop:hover,.drop.over{border-color:var(--accent);background:#fff8f3}
+  .filelist{list-style:none;margin:8px 0 0;padding:0}
+  .filelist li{display:flex;gap:8px;align-items:center;font-size:.9rem;padding:4px 0;border-bottom:1px solid var(--line)}
+  .filelist .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .filelist .st{font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .filelist .st.ok{color:var(--ok-ink)} .filelist .st.fail{color:var(--err)}
+  .filelist button{background:none;border:0;color:var(--focus);cursor:pointer;font:inherit;text-decoration:underline}
+  .okbox{background:var(--ok-bg);color:var(--ok-ink);border-radius:8px;padding:12px 14px;margin:6px 0 10px}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -239,19 +249,68 @@
       <div id="results" class="results" aria-live="polite" hidden></div>
     </section>
 
-    <!-- RIGHT: Energy assessments (wired in a later step) -->
-    <section class="panel disabledpanel" id="ea-panel" aria-labelledby="ea-title" tabindex="-1">
+    <!-- RIGHT: Energy assessments (bill upload -> Desk audit) -->
+    <section class="panel" id="ea-panel" aria-labelledby="ea-title" tabindex="-1">
       <h2 id="ea-title"></h2>
       <p class="small" id="ea-sub"></p>
-      <div style="border:1px dashed var(--line);border-radius:8px;padding:22px 12px;text-align:center;background:#fff">
-        <div id="ea-drop"></div>
-        <div class="small" id="ea-drop-note"></div>
+
+      <div id="ea-form">
+        <div class="drop" id="ea-drop" tabindex="0" role="button" aria-describedby="ea-drop-note">
+          <div id="ea-drop-t"></div>
+          <div class="small" id="ea-drop-note"></div>
+          <input type="file" id="ea-file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden>
+        </div>
+        <div class="small" id="ea-count" aria-live="polite"></div>
+        <ul class="filelist" id="ea-files"></ul>
+        <div class="ferr" id="ea-files-err"></div>
+
+        <h3 id="ea-choose"></h3>
+        <label class="check"><input type="checkbox" id="ea-desk" checked><span id="ea-desk-l"></span></label>
+        <label class="check small"><input type="checkbox" id="ea-solar" disabled><span id="ea-solar-l"></span></label>
+        <label class="check small"><input type="checkbox" disabled><span id="ea-proc-l"></span></label>
+
+        <h3 id="ea-about"></h3>
+        <div class="field">
+          <label for="ea-sqft" id="s-ea-sqft"></label>
+          <input type="text" id="ea-sqft" inputmode="numeric" aria-describedby="ea-sqft-err">
+          <div class="ferr" id="ea-sqft-err"></div>
+        </div>
+        <div id="ea-manual" hidden>
+          <div class="row2">
+            <div class="field"><label for="ea-mtype" id="s-ea-mtype"></label><select id="ea-mtype"></select><div class="ferr" id="ea-mtype-err"></div></div>
+            <div class="field"><label for="ea-maddr" id="s-ea-maddr"></label><input type="text" id="ea-maddr"><div class="ferr" id="ea-maddr-err"></div></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="ea-first" id="s-ea-first"></label><input type="text" id="ea-first" autocomplete="given-name"><div class="ferr" id="ea-first-err"></div></div>
+          <div class="field"><label for="ea-last" id="s-ea-last"></label><input type="text" id="ea-last" autocomplete="family-name"><div class="ferr" id="ea-last-err"></div></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="ea-email" id="s-ea-email"></label><input type="email" id="ea-email" autocomplete="email"><div class="ferr" id="ea-email-err"></div></div>
+          <div class="field"><label for="ea-phone" id="s-ea-phone"></label><input type="tel" id="ea-phone" autocomplete="tel"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="ea-consent"><span id="s-ea-consent"></span></label>
+        <div class="ferr" id="ea-consent-err"></div>
+
+        <div id="ea-errsummary" class="errbox" role="alert" hidden></div>
+        <button class="primary" id="ea-submit" type="button" style="margin-top:10px"></button>
+        <p class="small" id="ea-note" style="margin-top:8px;text-align:center"></p>
       </div>
-      <h3 id="ea-choose"></h3>
-      <label class="check"><input type="checkbox" id="ea-solar" disabled><span id="ea-solar-l"></span></label>
-      <label class="check"><input type="checkbox" id="ea-desk" disabled><span id="ea-desk-l"></span></label>
-      <label class="check small"><input type="checkbox" disabled><span id="ea-proc-l"></span></label>
-      <p class="small" id="ea-soon" style="margin-top:12px"></p>
+
+      <div id="ea-progress" hidden>
+        <p id="ea-prog-title" role="status" aria-live="polite"><span class="spinner"></span><span id="ea-prog-text"></span></p>
+        <ul class="filelist" id="ea-prog-files"></ul>
+      </div>
+
+      <div id="ea-done" hidden role="status" aria-live="polite">
+        <div class="okbox" id="ea-done-msg"></div>
+        <div id="ea-failed" hidden>
+          <p id="ea-failed-t"></p>
+          <ul class="filelist" id="ea-failed-list"></ul>
+          <button class="secondary" id="ea-retry" type="button"></button>
+        </div>
+        <div class="buttons"><button class="secondary" id="ea-another" type="button"></button></div>
+      </div>
     </section>
   </div>
 </div>
@@ -294,10 +353,24 @@ var S = {
   busy: 'Too many requests from this connection. Try again in a few minutes.',
   reportBtn: 'Download report', reportPrep: 'Preparing your report', checkBills: 'Check it with your bills',
   another: 'Start another building', perYear: '{n} a year',
-  eaTitle: 'Energy assessments', eaSub: 'Have your bills? Upload them and choose what you would like.',
-  eaDrop: 'Drop your bills here', eaNote: 'Up to 36 PDFs, filed to your institution\'s record',
-  eaChoose: 'What would you like?', eaSolar: 'Solar assessment', eaDesk: 'Desk audit', eaProc: 'Procurement (coming soon)',
-  eaSoon: 'Bill upload on this page is coming in the next update. For now, use the existing Energy Screening and Solar Assessment forms.',
+  eaTitle: 'Energy assessments', eaSub: 'Have your bills? Upload them and we will take a closer look.',
+  eaDrop: 'Drop your bills here, or click to choose files', eaNote: 'PDF, JPG or PNG. Up to 36 files, 25 MB each. Filed to your institution\'s record.',
+  eaChoose: 'What would you like?', eaDesk: 'Desk audit', eaSolar: 'Solar assessment (questions coming next)', eaProc: 'Procurement (coming soon)',
+  eaAbout: 'About this building and you', eaSqft: 'Total square feet', eaMtype: 'Building type', eaMaddr: 'Full street address',
+  eaFirst: 'First name', eaLast: 'Last name', eaEmail: 'Email', eaPhone: 'Phone (optional)',
+  eaConsent: 'I agree that Catholic Energies may store these bills and figures and use them to follow up with me about my building.',
+  eaSubmit: 'Submit for assessment', eaSubmitNote: 'We\'ll get back to you soon with the results.',
+  eaCount: '{n} of 36 files, {mb} MB', eaRemove: 'Remove',
+  eaSaving: 'Saving your information', eaUploading: 'Uploading bill {i} of {n}', eaFinishing: 'Finishing up',
+  eaDone: 'Thank you. Your bills are filed and we\'ll get back to you soon with the results.',
+  eaDonePartial: 'Your information is saved, but {n} bill(s) did not upload. Please try those again.',
+  eaRetry: 'Try the failed bills again', eaFailedT: 'These bills did not upload:',
+  eaNoFiles: 'Choose at least one bill.', eaTooMany: 'You can upload up to 36 files.',
+  eaBadType: '{name} is not a PDF, JPG or PNG file.', eaTooBig: '{name} is larger than 25 MB.', eaEmpty: '{name} is empty.',
+  eaNeedChoice: 'Tick Desk audit to submit your bills.',
+  eaFail: 'Something went wrong and your information was not saved. Try again.',
+  eaLinkExpired: 'The upload took too long and its link expired. Please submit again.',
+  eaStatusWait: 'Waiting', eaStatusUp: 'Uploading', eaStatusOk: 'Saved', eaStatusFail: 'Failed',
   hintKwh: 'That works out to ${r} per kWh, which is outside the usual range. Check the kWh and cost columns.',
   hintTherm: 'That works out to ${r} per therm, which is outside the usual range. Check the usage and cost columns.',
   hintNoGas: 'You said gas heats this building, but no gas figures are entered. The result may understate your energy use.',
@@ -365,9 +438,14 @@ function setText(id, t){ $(id).textContent = t; }
   setText('s-ann-e', S.annE); setText('s-ann-g', S.annG);
   setText('s-contact', S.contact); setText('s-cname', S.cName); setText('s-cemail', S.cEmail); setText('s-cphone', S.cPhone);
   setText('s-consent', S.consent); setText('submit', S.submit); setText('s-working', S.working);
-  setText('ea-title', S.eaTitle); setText('ea-sub', S.eaSub); setText('ea-drop', S.eaDrop); setText('ea-drop-note', S.eaNote);
-  setText('ea-choose', S.eaChoose); setText('ea-solar-l', S.eaSolar); setText('ea-desk-l', S.eaDesk);
-  setText('ea-proc-l', S.eaProc); setText('ea-soon', S.eaSoon);
+  setText('ea-title', S.eaTitle); setText('ea-sub', S.eaSub); setText('ea-drop-t', S.eaDrop); setText('ea-drop-note', S.eaNote);
+  setText('ea-choose', S.eaChoose); setText('ea-desk-l', S.eaDesk); setText('ea-solar-l', S.eaSolar); setText('ea-proc-l', S.eaProc);
+  setText('ea-about', S.eaAbout); setText('s-ea-sqft', S.eaSqft); setText('s-ea-mtype', S.eaMtype); setText('s-ea-maddr', S.eaMaddr);
+  setText('s-ea-first', S.eaFirst); setText('s-ea-last', S.eaLast); setText('s-ea-email', S.eaEmail); setText('s-ea-phone', S.eaPhone);
+  setText('s-ea-consent', S.eaConsent); setText('ea-submit', S.eaSubmit); setText('ea-note', S.eaSubmitNote);
+  setText('ea-failed-t', S.eaFailedT); setText('ea-retry', S.eaRetry); setText('ea-another', S.another);
+  BTYPES.slice(1).forEach(function(o){ $('ea-mtype').appendChild(el('option',{value:o[1]},o[1])); });
+  $('ea-mtype').insertBefore(el('option',{value:''},'Choose...'), $('ea-mtype').firstChild); $('ea-mtype').value = '';
   BTYPES.forEach(function(o){ $('btype').appendChild(el('option',{value:o[0]},o[1])); });
   HFUELS.forEach(function(o){ $('hfuel').appendChild(el('option',{value:o[0]},o[1])); });
   REASONS.forEach(function(r){
@@ -453,6 +531,7 @@ function pickBuilding(b){
   setText('sqft-note', note);
   $('sqft').value = '';
   resetForm(true);
+  resetRight();
   postHeight();
   $('sqft').focus();
 }
@@ -780,7 +859,7 @@ function renderResult(body){
   var slot = el('span'); btns.appendChild(slot);
   renderReport(body.report, slot, body.submission_id || state.submissionId);
   var cb = el('button',{type:'button','class':'secondary'},S.checkBills);
-  cb.addEventListener('click', function(){ var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
+  cb.addEventListener('click', function(){ $('ea-desk').checked = true; prefillRight(); var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
   btns.appendChild(cb);
   var again = el('button',{type:'button','class':'secondary'},S.another); again.addEventListener('click', startAnother); btns.appendChild(again);
   show('results'); scrollParentTo(box);
@@ -822,6 +901,7 @@ function resetForm(keepBuilding){
 }
 function startAnother(){
   resetForm(false);
+  resetRight();
   state.building = null; state.account = null;
   $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
   $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('zip').value = '';
@@ -830,6 +910,231 @@ function startAnother(){
 ['sqft','btype','shared','ann-e','ann-g','c-name','c-email','c-phone','consent'].forEach(function(i){
   $(i).addEventListener('input', edited); $(i).addEventListener('change', edited);
 });
+
+
+/* ------------------------------------------------------------------ Energy assessments: bill upload (Desk audit) */
+var MAX_FILES = 36, MAX_BYTES = 25 * 1024 * 1024, BILL_EXT = /\.(pdf|jpe?g|png)$/i;
+var ea = { files: [], up: null, busy: false };
+
+function eaClearErrs(){
+  ['ea-files-err','ea-sqft-err','ea-mtype-err','ea-maddr-err','ea-first-err','ea-last-err','ea-email-err','ea-consent-err'].forEach(function(i){ setText(i,''); });
+  var bad = $('ea-panel').querySelectorAll('.bad'); for (var i=0;i<bad.length;i++) bad[i].classList.remove('bad');
+  $('ea-errsummary').hidden = true; $('ea-errsummary').textContent = '';
+}
+function eaShowErrs(list){
+  eaClearErrs();
+  var ul = el('ul');
+  list.forEach(function(e){
+    ul.appendChild(el('li',null,e.message));
+    if (e.id){ var inl = $(e.id + '-err'); if (inl) inl.textContent = e.message; var f = $(e.id); if (f) f.classList.add('bad'); }
+  });
+  var box = $('ea-errsummary'); box.appendChild(el('strong',null,'Please fix the following:')); box.appendChild(ul); box.hidden = false;
+  var first = list[0] && list[0].id && $(list[0].id); if (first && first.focus) first.focus(); else box.scrollIntoView({block:'center'});
+  postHeight();
+}
+function eaRender(){
+  var ul = $('ea-files'); ul.textContent = '';
+  var total = 0;
+  ea.files.forEach(function(f, i){
+    total += f.size;
+    var li = el('li'); li.appendChild(el('span',{'class':'nm'}, f.name));
+    li.appendChild(el('span',{'class':'st'}, (f.size/1048576).toFixed(1) + ' MB'));
+    var rm = el('button',{type:'button','aria-label':S.eaRemove + ' ' + f.name}, S.eaRemove);
+    rm.addEventListener('click', function(){ ea.files.splice(i,1); eaRender(); });
+    li.appendChild(rm); ul.appendChild(li);
+  });
+  setText('ea-count', ea.files.length ? fill(S.eaCount, {n: ea.files.length, mb: (total/1048576).toFixed(1)}) : '');
+  postHeight();
+}
+function eaAdd(list){
+  var msgs = [];
+  Array.prototype.forEach.call(list, function(f){
+    if (!BILL_EXT.test(f.name)){ msgs.push(fill(S.eaBadType,{name:f.name})); return; }
+    if (!(f.size > 0)){ msgs.push(fill(S.eaEmpty,{name:f.name})); return; }
+    if (f.size > MAX_BYTES){ msgs.push(fill(S.eaTooBig,{name:f.name})); return; }
+    if (ea.files.some(function(x){ return x.name === f.name && x.size === f.size; })) return;
+    if (ea.files.length >= MAX_FILES){ if (msgs.indexOf(S.eaTooMany) < 0) msgs.push(S.eaTooMany); return; }
+    ea.files.push(f);
+  });
+  eaRender();
+  setText('ea-files-err', msgs.join(' '));
+}
+$('ea-drop').addEventListener('click', function(){ $('ea-file').click(); });
+$('ea-drop').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('ea-file').click(); } });
+$('ea-file').addEventListener('change', function(){ eaAdd(this.files); this.value = ''; });
+['dragenter','dragover'].forEach(function(ev){ $('ea-drop').addEventListener(ev, function(e){ e.preventDefault(); this.classList.add('over'); }); });
+['dragleave','drop'].forEach(function(ev){ $('ea-drop').addEventListener(ev, function(e){ e.preventDefault(); this.classList.remove('over'); }); });
+$('ea-drop').addEventListener('drop', function(e){ if (e.dataTransfer && e.dataTransfer.files) eaAdd(e.dataTransfer.files); });
+
+// Copy what the client already typed on the left so nothing is retyped (never overwrites right-hand entries).
+function prefillRight(){
+  if (!$('ea-sqft').value && $('sqft').value) $('ea-sqft').value = $('sqft').value;
+  var nm = $('c-name').value.trim();
+  if (nm && !$('ea-first').value && !$('ea-last').value){
+    var i = nm.lastIndexOf(' ');
+    if (i > 0){ $('ea-first').value = nm.slice(0,i).trim(); $('ea-last').value = nm.slice(i+1).trim(); }
+    else { $('ea-first').value = nm; }
+  }
+  if (!$('ea-email').value) $('ea-email').value = $('c-email').value;
+  if (!$('ea-phone').value) $('ea-phone').value = $('c-phone').value;
+  if (!$('ea-consent').checked && $('consent').checked) $('ea-consent').checked = true;
+}
+
+function eaValidate(){
+  var out = [];
+  if (!ea.files.length) out.push({id:'ea-files', message:S.eaNoFiles});
+  if (!$('ea-desk').checked) out.push({id:null, message:S.eaNeedChoice});
+  var sq = parseNum($('ea-sqft').value);
+  if (sq == null || isNaN(sq) || sq <= 0 || sq > 5000000) out.push({id:'ea-sqft', message:'Enter the total square feet as a number.'});
+  if (state.building && state.building.manual){
+    if (!$('ea-mtype').value) out.push({id:'ea-mtype', message:'Choose the building type.'});
+    if (!$('ea-maddr').value.trim()) out.push({id:'ea-maddr', message:'Enter the full street address.'});
+  }
+  if (!$('ea-first').value.trim()) out.push({id:'ea-first', message:'Enter your first name.'});
+  if (!$('ea-last').value.trim()) out.push({id:'ea-last', message:'Enter your last name.'});
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('ea-email').value.trim())) out.push({id:'ea-email', message:'Enter an email address we can reach you at.'});
+  if (!$('ea-consent').checked) out.push({id:'ea-consent', message:'Please tick the box to agree.'});
+  return out;
+}
+
+function postJSON(path, body){
+  return fetch(API + path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(r){ return r.json().catch(function(){ return null; }).then(function(d){ return {status:r.status, body:d}; }); });
+}
+function toBase64(file){
+  return new Promise(function(resolve, reject){
+    var fr = new FileReader();
+    fr.onload = function(){ var s = String(fr.result); resolve(s.slice(s.indexOf(',') + 1)); };   // strip "data:...;base64,"
+    fr.onerror = function(){ reject(new Error('read')); };
+    fr.readAsDataURL(file);
+  });
+}
+function eaShow(which){
+  $('ea-form').hidden = which !== 'form'; $('ea-progress').hidden = which !== 'progress'; $('ea-done').hidden = which !== 'done';
+  postHeight();
+}
+function eaProgList(files, ul){
+  ul.textContent = '';
+  var cells = {};
+  files.forEach(function(f){
+    var li = el('li'); li.appendChild(el('span',{'class':'nm'}, f.name));
+    var st = el('span',{'class':'st'}, S.eaStatusWait); li.appendChild(st); ul.appendChild(li); cells[f.name + '|' + f.size] = st;
+  });
+  return function(f, text, cls){ var c = cells[f.name + '|' + f.size]; if (c){ c.textContent = text; c.className = 'st ' + (cls || ''); } };
+}
+
+// Upload one bill; one automatic retry. Resolves true on success, false on failure; a 403 means the 2-hour link expired.
+function eaUploadOne(f){
+  var up = ea.up;
+  function once(){
+    return toBase64(f).then(function(b64){
+      return postJSON('/screening-file', {building_id: up.buildingId, submission_id: up.sid, token: up.token, name: f.name, data: b64});
+    });
+  }
+  return once().then(function(r){
+    if (r.status === 403){ up.expired = true; return false; }
+    if (r.body && r.body.success) return true;
+    return once().then(function(r2){ return !!(r2.body && r2.body.success); });
+  }).catch(function(){ return false; });
+}
+
+function eaUploadAll(files){
+  var up = ea.up, mark = eaProgList(files, $('ea-prog-files')), failed = [], i = 0;
+  eaShow('progress');
+  function next(){
+    if (i >= files.length) return Promise.resolve();
+    var f = files[i++];
+    setText('ea-prog-text', fill(S.eaUploading, {i: i, n: files.length}));
+    mark(f, S.eaStatusUp, '');
+    return eaUploadOne(f).then(function(ok){
+      mark(f, ok ? S.eaStatusOk : S.eaStatusFail, ok ? 'ok' : 'fail');
+      if (!ok) failed.push(f);
+      return next();
+    });
+  }
+  return next().then(function(){ return failed; });
+}
+
+function eaFinish(failed){
+  var up = ea.up;
+  setText('ea-prog-text', S.eaFinishing); eaShow('progress');
+  return postJSON('/screening-complete', {building_id: up.buildingId, submission_id: up.sid, token: up.token,
+      failed: failed.map(function(f){ return f.name; })})
+    .then(function(r){
+      if (!(r.body && r.body.success)) throw new Error('complete');
+      up.failed = failed; eaDone();
+    });
+}
+function eaDone(){
+  var up = ea.up, n = up.failed.length;
+  setText('ea-done-msg', n ? fill(S.eaDonePartial, {n: n}) : S.eaDone);
+  $('ea-done-msg').className = n ? 'errbox' : 'okbox';
+  var box = $('ea-failed'); box.hidden = !n; var ul = $('ea-failed-list'); ul.textContent = '';
+  up.failed.forEach(function(f){ var li = el('li'); li.appendChild(el('span',{'class':'nm'}, f.name)); ul.appendChild(li); });
+  ea.busy = false; $('ea-submit').disabled = false;
+  eaShow('done'); scrollParentTo($('ea-panel'));
+}
+function eaFail(msg){ ea.busy = false; $('ea-submit').disabled = false; eaShow('form'); eaShowErrs([{message: msg}]); }
+
+$('ea-submit').addEventListener('click', function(){
+  if (ea.busy) return;
+  var errs = eaValidate();
+  if (errs.length){ eaShowErrs(errs); return; }
+  eaClearErrs();
+  var b = state.building, acc = state.account, files = ea.files.slice();
+  var fuel = $('hfuel').value;
+  var body = {
+    sf_account_id: acc.id, upload_mode: 'separate',
+    contact: {first_name: $('ea-first').value.trim(), last_name: $('ea-last').value.trim(),
+              email: $('ea-email').value.trim(), phone: $('ea-phone').value.trim()},
+    buildings: [{
+      sf_building_id: b.manual ? 'NEW' : b.id, manually_added: !!b.manual,
+      building_name: b.name || '',
+      building_type: b.manual ? $('ea-mtype').value : (b.type || ''),
+      building_address: b.manual ? $('ea-maddr').value.trim() : (b.address || ''),
+      client_sqft: parseNum($('ea-sqft').value),
+      client_confirmed_county_sqft: !!(b.sqft_county && typeof b.sqft === 'number' && parseNum($('ea-sqft').value) === b.sqft),
+      county_sqft_reference: (b.sqft_county && typeof b.sqft === 'number') ? b.sqft : null,
+      screening_unit: 'building',
+      client_heating_fuel: fuel || '',
+      client_shared_meter_note: $('shared').value.trim(),
+      bill_files: files.map(function(f){ return {name: f.name, type: f.type || '', size: f.size}; })
+    }]
+  };
+  ea.busy = true; $('ea-submit').disabled = true;
+  setText('ea-prog-text', S.eaSaving); eaProgList([], $('ea-prog-files')); eaShow('progress');
+  postJSON('/screening-request', body).then(function(r){
+    if (r.status === 400 && r.body && r.body.errors){ return eaFail(r.body.errors.join(' ')); }
+    if (!(r.body && r.body.success && r.body.records && r.body.records[0] && r.body.records[0].uploadToken)) return eaFail(S.eaFail);
+    var rec = r.body.records[0];
+    ea.up = {buildingId: rec.buildingId, sid: r.body.submissionId, token: rec.uploadToken, files: files, failed: [], expired: false};
+    return eaUploadAll(files).then(function(failed){
+      if (ea.up.expired) return eaFail(S.eaLinkExpired);
+      return eaFinish(failed);
+    });
+  }).catch(function(){ eaFail(S.eaFail); });
+});
+
+$('ea-retry').addEventListener('click', function(){
+  var up = ea.up; if (!up || !up.failed.length || ea.busy) return;
+  ea.busy = true; $('ea-submit').disabled = true;
+  eaUploadAll(up.failed).then(function(failed){
+    if (up.expired) return eaFail(S.eaLinkExpired);
+    return eaFinish(failed);
+  }).catch(function(){ eaFail(S.eaFail); });
+});
+$('ea-another').addEventListener('click', startAnother);
+
+function resetRight(){
+  ea.files = []; ea.up = null; ea.busy = false; $('ea-submit').disabled = false;
+  eaRender(); eaClearErrs();
+  ['ea-sqft','ea-first','ea-last','ea-email','ea-phone','ea-maddr'].forEach(function(i){ $(i).value = ''; });
+  $('ea-mtype').value = ''; $('ea-consent').checked = false; $('ea-desk').checked = true;
+  var man = !!(state.building && state.building.manual);
+  $('ea-manual').hidden = !man;
+  if (man){ $('ea-maddr').value = state.building.address || ''; }
+  eaShow('form');
+}
 
 /* ------------------------------------------------------------------ init */
 $('startmonth').value = defaultStart();
