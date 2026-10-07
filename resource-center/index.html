@@ -273,6 +273,7 @@
         </div>
         <label class="check"><input type="checkbox" id="consent"><span id="s-consent"></span></label>
         <div class="ferr" id="consent-err"></div>
+        <label class="check"><input type="checkbox" id="rem-ia"><span class="rem-t"></span></label>
 
         <div class="hp" aria-hidden="true"><label>Website<input type="text" id="website" tabindex="-1" autocomplete="off" value=""></label></div>
 
@@ -380,6 +381,7 @@
         <div class="field"><label for="ea-role" id="s-ea-role"></label><input type="text" id="ea-role" autocomplete="organization-title"></div>
         <label class="check"><input type="checkbox" id="ea-consent"><span id="s-ea-consent"></span></label>
         <div class="ferr" id="ea-consent-err"></div>
+        <label class="check"><input type="checkbox" id="rem-ea"><span class="rem-t"></span></label>
 
         <div id="ea-errsummary" class="errbox" role="alert" hidden></div>
         <button class="primary" id="ea-submit" type="button" style="margin-top:10px"></button>
@@ -415,6 +417,7 @@ var S = {
   eyebrow: 'Energy Assessment Resource Center', title: 'Get Your Free Energy Assessment',
   lede: 'Choose where to start. We walk with you at your own pace: no pressure, and no cost to Catholic organizations.',
   step1: 'Find your institution and building', offersT: 'Choose where to start',
+  remember: 'Remember my name and contact details on this device, so I do not have to retype them.',
   iaManual: 'Instant Audit works with a building that is already on file. To add a new building, choose Desk Audit or Solar Assessment above: they add it for our team to review.',
   modeLab: 'Month by month gives the most accurate result. No monthly figures handy? Annual totals will do.',
   modeAnnual: 'Annual totals', modeMonthly: 'Month by month', moreAccurate: 'Make this more accurate: enter month by month',
@@ -638,6 +641,7 @@ function pickBuilding(b){
   $('sqft').value = '';
   resetForm(true);
   resetRight();
+  remApply();
   postHeight();
   $('sqft').focus();
 }
@@ -938,6 +942,7 @@ function fieldToId(f){
 /* queued: show the middleware's message, then poll for up to 60 s */
 function stopPoll(){ if (state.pollTimer){ clearInterval(state.pollTimer); state.pollTimer = null; } }
 function renderQueued(body){
+  remStore('ia');
   setText('queued-msg', body.message || '');
   setText('q-again', S.another); show('queued'); scrollParentTo($('queued'));
   stopPoll(); var started = Date.now();
@@ -953,6 +958,7 @@ $('q-again').addEventListener('click', startAnother);
 
 /* result: everything shown comes from the JSON; written with textContent only */
 function renderResult(body){
+  remStore('ia');
   stopPoll();
   var r = body.result, box = $('results'); box.textContent = '';
   var light = (r.light === 'green' || r.light === 'yellow') ? r.light : 'red';
@@ -1092,9 +1098,7 @@ function prefillRight(){
   if (!$('ea-sqft').value && $('sqft').value) $('ea-sqft').value = $('sqft').value;
   var nm = $('c-name').value.trim();
   if (nm && !$('ea-first').value && !$('ea-last').value){
-    var i = nm.lastIndexOf(' ');
-    if (i > 0){ $('ea-first').value = nm.slice(0,i).trim(); $('ea-last').value = nm.slice(i+1).trim(); }
-    else { $('ea-first').value = nm; }
+    var sp = splitName(nm); $('ea-first').value = sp.first; $('ea-last').value = sp.last;
   }
   if (!$('ea-email').value) $('ea-email').value = $('c-email').value;
   if (!$('ea-phone').value) $('ea-phone').value = $('c-phone').value;
@@ -1227,6 +1231,7 @@ function eaFinish(failed){
 }
 function eaDone(){
   var up = ea.up, n = up.failed.length;
+  remStore('ea');
   setText('ea-done-msg', n ? fill(S.eaDonePartial, {n: n}) : S.eaDone);
   $('ea-done-msg').className = n ? 'errbox' : 'okbox';
   var box = $('ea-failed'); box.hidden = !n; var ul = $('ea-failed-list'); ul.textContent = '';
@@ -1374,10 +1379,49 @@ function prefillLeft(){
 }
 if (/[?&]bare=1/.test(location.search)) $('intro').hidden = true;   // hide the heading when the Squarespace page already has one
 
+
+/* ------------------------------------------------------------------ autofill and "remember me" */
+// Password managers and browser autofill look for real <form> elements, field names and autocomplete tokens.
+(function formSemantics(){
+  var map = {'zip':['zip','postal-code'], 'c-name':['name','name'], 'c-email':['email','email'], 'c-phone':['tel','tel'],
+             'ea-first':['firstName','given-name'], 'ea-last':['lastName','family-name'], 'ea-email':['email','email'],
+             'ea-phone':['tel','tel'], 'ea-role':['title','organization-title']};
+  Object.keys(map).forEach(function(id){ var e = $(id); e.setAttribute('name', map[id][0]); e.setAttribute('autocomplete', map[id][1]); });
+  ['lk-zip','ia-form','ea-form'].forEach(function(id){
+    var n = $(id), f = document.createElement('form');
+    f.setAttribute('autocomplete','on'); f.setAttribute('novalidate',''); f.setAttribute('action','#');
+    f.addEventListener('submit', function(e){ e.preventDefault(); });   // nothing is ever sent by the browser itself
+    n.parentNode.insertBefore(f, n); f.appendChild(n);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.rem-t'), function(t){ t.textContent = S.remember; });
+})();
+
+// Opt-in: a returning visitor on the same device gets name, email, phone and role filled in. Stored only in this browser.
+var REM_KEY = 'ce_rc_contact_v1';
+function splitName(nm){ nm = (nm || '').trim(); var i = nm.lastIndexOf(' '); return i > 0 ? {first: nm.slice(0,i).trim(), last: nm.slice(i+1).trim()} : {first: nm, last: ''}; }
+function remApply(){
+  var d = null; try { d = JSON.parse(localStorage.getItem(REM_KEY) || 'null'); } catch(e){}
+  if (!d) return;
+  if (d.first || d.last){ $('c-name').value = ((d.first || '') + ' ' + (d.last || '')).trim(); $('ea-first').value = d.first || ''; $('ea-last').value = d.last || ''; }
+  $('c-email').value = $('ea-email').value = d.email || ''; $('c-phone').value = $('ea-phone').value = d.phone || ''; $('ea-role').value = d.role || '';
+  $('rem-ia').checked = $('rem-ea').checked = true;
+}
+function remStore(flow){
+  try {
+    if (!$(flow === 'ia' ? 'rem-ia' : 'rem-ea').checked){ localStorage.removeItem(REM_KEY); return; }
+    var d = flow === 'ia' ? splitName($('c-name').value) : {first: $('ea-first').value.trim(), last: $('ea-last').value.trim()};
+    d.email = (flow === 'ia' ? $('c-email') : $('ea-email')).value.trim();
+    d.phone = (flow === 'ia' ? $('c-phone') : $('ea-phone')).value.trim();
+    d.role = flow === 'ia' ? '' : $('ea-role').value.trim();
+    localStorage.setItem(REM_KEY, JSON.stringify(d));
+  } catch(e){}   // storage can be blocked; the form still works
+}
+
 /* ------------------------------------------------------------------ init */
 $('startmonth').value = defaultStart();
 buildRows();
 syncOfferUI();
+remApply();
 if (window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
 window.addEventListener('load', postHeight);
 </script>
