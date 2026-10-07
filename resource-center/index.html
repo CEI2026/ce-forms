@@ -964,7 +964,7 @@ function renderResult(body){
   var light = (r.light === 'green' || r.light === 'yellow') ? r.light : 'red';
   var chip = el('span',{'class':'chip ' + light}, (SHOW_LIGHT_WORD ? (r.light + ': ') : '') + (r.headline || ''));
   box.appendChild(chip);
-  if (typeof r.annual_spend === 'number') box.appendChild(el('div',{'class':'spend'}, fill(S.perYear, {n: fmtMoney(r.annual_spend)})));
+  if (typeof r.annual_spend === 'number' && r.annual_spend > 0) box.appendChild(el('div',{'class':'spend'}, fill(S.perYear, {n: fmtMoney(r.annual_spend)})));
   if (r.basis_label) box.appendChild(el('div',{'class':'basis'}, r.basis_label));
   var sm = r.summary || {};
   if (sm.used && sm.used.length){
