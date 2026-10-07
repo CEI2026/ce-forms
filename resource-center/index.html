@@ -5,116 +5,155 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Energy Assessment Resource Center</title>
 <!--
-  Energy Assessment Resource Center - Instant Audit panel + bill upload (Desk audit) v0.2, 2026-10-07.
+  Energy Assessment Resource Center v0.4, 2026-10-07: brand styling (playbook Apr 2026), offering cards, entry-mode switch, one-screen flow, Solar Assessment questions, handshake matching the other CE forms.
   Spec: UI_and_Middleware_Build_Spec.md. This page never scores and never writes its own result
   words: it shows exactly what ce-web-to-sf-middleware returns (rule 1 and rule 5 of the spec).
   Static, no build step. Netlify: publish directory = resource-center.
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Catholic Energies brand playbook (Apr 2026): Gold #F89A1E, Orange #DC6F2A, Red Orange #C24F2A,
+     Cream #F4E9DA, Dark Gray #3A3A3A. Proxima Nova is the brand face; Montserrat is the approved substitute. */
   :root{
-    --ink:#1f2a33; --muted:#5d6b76; --line:#d5dbe0; --bg:#ffffff; --panel:#f7f8f9;
-    --accent:#d9631e; --accent-dark:#b24f14; --focus:#1b5fa8;
-    --ok-bg:#e6f4ea; --ok-ink:#1e6b34; --warn-bg:#fff4d6; --warn-ink:#7a5b00;
-    --neutral-bg:#eceff1; --neutral-ink:#37474f; --err:#b3261e; --err-bg:#fdecea;
+    --gold:#F89A1E; --orange:#DC6F2A; --red:#C24F2A; --cream:#F4E9DA; --ink:#3A3A3A;
+    --muted:#5c5c5c; --line:#dccbb0; --bg:#ffffff; --panel:#F4E9DA; --link:#A8421F; --focus:#1b5fa8;
+    --ok-bg:#e3f1e5; --ok-ink:#1e6b34; --warn-bg:#fdebc8; --warn-ink:#7a4b00;
+    --neutral-bg:#e9e5df; --neutral-ink:#3A3A3A; --err:#b3261e; --err-bg:#fdecea;
+    --grad:linear-gradient(90deg,#F89A1E,#DC6F2A);
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);
-    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1100px;margin:0 auto;padding:16px}
-  h1{font-size:1.6rem;margin:0 0 4px}
-  h2{font-size:1.2rem;margin:0 0 4px}
-  h3{font-size:1rem;margin:16px 0 6px}
+    font:16px/1.6 "Montserrat","Proxima Nova",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px}
+  .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin:0 0 6px}
+  h1{font-size:1.9rem;line-height:1.2;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
+  h2{font-size:1.25rem;line-height:1.25;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px}
+  h3{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin:18px 0 6px}
   p{margin:0 0 10px}
-  .lede{color:var(--muted);margin-bottom:16px}
-  .rule{height:3px;background:var(--accent);border:0;margin:10px 0 18px}
-  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px}
-  .step .num{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;
-    font-size:.8rem;font-weight:600;align-items:center;justify-content:center;margin-right:8px}
-  .step-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-  .step-head .title{font-weight:600}
-  .step-head .sel{color:var(--muted);flex:1;min-width:200px}
-  .linkbtn{background:none;border:0;color:var(--focus);text-decoration:underline;cursor:pointer;font:inherit;padding:2px 4px}
-  .grid2{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
-  @media (max-width:860px){.grid2{grid-template-columns:1fr}}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:3px}
-  input[type=text],input[type=email],input[type=tel],input[type=month],select,textarea{
-    width:100%;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;
-    font:inherit;color:var(--ink)}
-  textarea{height:auto;padding:8px 10px}
-  input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
-  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
-  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
-  @media (max-width:560px){.row3,.row2{grid-template-columns:1fr}}
-  .field{margin-bottom:10px}
-  .check{display:flex;gap:8px;align-items:flex-start;font-size:.95rem;color:var(--ink);margin:4px 0}
-  .check input{margin-top:4px}
+  .lede{color:var(--muted);max-width:720px;margin-bottom:6px}
+  .wave{display:block;width:100%;height:36px;margin:2px 0 16px}
   .small{font-size:.85rem;color:var(--muted)}
-  button.primary{background:var(--accent);color:#fff;border:0;border-radius:8px;height:44px;padding:0 18px;
-    font:inherit;font-weight:600;cursor:pointer;width:100%}
-  button.primary:hover{background:var(--accent-dark)}
-  button.primary:disabled{background:#c9ced2;cursor:not-allowed}
-  button.secondary,a.secondary{display:inline-block;background:#fff;color:var(--ink);border:1px solid var(--line);
-    border-radius:8px;height:38px;line-height:36px;padding:0 14px;font:inherit;cursor:pointer;text-decoration:none}
+  .sec-title{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px}
+  .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;font-size:.8rem;
+    font-weight:800;align-items:center;justify-content:center;letter-spacing:0}
+  /* offering cards */
+  .offers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
+  @media (max-width:960px){.offers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:520px){.offers{grid-template-columns:1fr}}
+  .offer{position:relative;text-align:left;background:#fff;border:2px solid var(--line);border-radius:16px;padding:18px 16px 16px;
+    font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:190px;overflow:hidden}
+  .offer:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--grad)}
+  .offer:hover:not([disabled]){border-color:var(--orange)}
+  .offer[aria-pressed=true]{border-color:var(--red);background:#fff8f0;box-shadow:0 0 0 3px rgba(194,79,42,.18)}
+  .offer .lab{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-top:4px}
+  .offer .ttl{font-size:1.05rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1.25}
+  .offer .txt{font-size:.9rem;color:var(--muted);flex:1}
+  .offer .go{font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+  .offer[disabled]{cursor:not-allowed;opacity:.62;background:#faf6f0}
+  .offer[disabled] .go{color:var(--muted)}
+  /* steps and panels */
+  .step{background:var(--panel);border-radius:16px;padding:16px 18px;margin-bottom:22px}
+  .step-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+  .step-head .title{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.85rem}
+  .step-head .sel{color:var(--ink);flex:1;min-width:200px;font-weight:600}
+  .linkbtn{background:none;border:0;color:var(--link);text-decoration:underline;cursor:pointer;font:inherit;font-weight:600;padding:2px 4px}
+  .panel{background:var(--panel);border-radius:16px;padding:20px 22px;margin-bottom:22px}
+  label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:3px}
+  input[type=text],input[type=email],input[type=tel],input[type=month],select,textarea{
+    width:100%;height:42px;padding:0 12px;border:1px solid #cdb999;border-radius:10px;background:#fff;
+    font:inherit;font-size:.95rem;color:var(--ink)}
+  input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible,.drop:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:10px}
+  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:10px}
+  @media (max-width:640px){.row3,.row2{grid-template-columns:1fr}}
+  .field{margin-bottom:10px}
+  .check{display:flex;gap:8px;align-items:flex-start;font-size:.92rem;font-weight:400;color:var(--ink);margin:4px 0}
+  .check input{margin-top:5px}
+  /* buttons */
+  button.primary,a.btn-link{display:inline-flex;align-items:center;justify-content:center;background:var(--red);color:#fff;border:0;border-radius:999px;min-height:48px;padding:0 26px;
+    font:inherit;font-size:.82rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-align:center;text-decoration:none}
+  button.primary{width:100%}
+  button.primary:hover,a.btn-link:hover{background:#a8421f}
+  button.primary:disabled{background:#c9bfb2;cursor:not-allowed}
+  button.secondary,a.secondary{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:999px;min-height:40px;padding:0 18px;
+    font:inherit;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;text-decoration:none}
+  button.secondary:hover,a.secondary:hover{background:var(--ink);color:#fff}
+  /* entry mode switch */
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin:2px 0 14px;background:#fff}
+  .seg button{border:0;background:#fff;color:var(--ink);font:inherit;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;cursor:pointer}
+  .seg button[aria-pressed=true]{background:var(--ink);color:#fff}
   .tablewrap{overflow-x:auto;margin:8px 0}
   table.grid{border-collapse:collapse;width:100%;min-width:560px}
-  table.grid th{font-size:.8rem;color:var(--muted);text-align:left;font-weight:500;padding:2px 4px}
+  table.grid th{font-size:.72rem;color:var(--muted);text-align:left;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 4px}
   table.grid td{padding:2px}
-  table.grid td.m{white-space:nowrap;padding:2px 6px;font-size:.9rem}
-  table.grid input{height:34px;font-size:.9rem;padding:0 6px;text-align:right}
-  table.grid tfoot td{border-top:1px solid var(--line);font-weight:600;padding:6px 6px;font-size:.9rem;text-align:right}
+  table.grid td.m{white-space:nowrap;padding:2px 6px;font-size:.9rem;font-weight:600}
+  table.grid input{height:36px;font-size:.9rem;padding:0 8px;text-align:right}
+  table.grid tfoot td{border-top:2px solid var(--ink);font-weight:700;padding:6px 6px;font-size:.9rem;text-align:right}
   table.grid tfoot td:first-child{text-align:left}
   table.grid input.bad{border-color:var(--err);background:var(--err-bg)}
-  .hint{font-size:.85rem;color:var(--warn-ink);background:var(--warn-bg);border-radius:8px;padding:6px 10px;margin:6px 0}
-  .okline{font-size:.85rem;color:var(--ok-ink);margin:6px 0}
-  .errbox{background:var(--err-bg);color:var(--err);border-radius:8px;padding:10px 12px;margin:10px 0}
+  .hint{font-size:.85rem;color:var(--warn-ink);background:var(--warn-bg);border-radius:10px;padding:8px 12px;margin:6px 0}
+  .okline{font-size:.85rem;color:var(--ok-ink);margin:6px 0;font-weight:600}
+  .errbox{background:var(--err-bg);color:var(--err);border-radius:10px;padding:10px 14px;margin:10px 0}
   .errbox ul{margin:6px 0 0 18px;padding:0}
-  .ferr{color:var(--err);font-size:.85rem;margin-top:2px}
+  .ferr{color:var(--err);font-size:.82rem;margin-top:2px}
   .bad{border-color:var(--err)!important}
   .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
-  .results{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-  .chip{display:inline-block;font-weight:600;padding:5px 14px;border-radius:999px}
+  .results{margin-top:16px;border-top:3px solid var(--gold);padding-top:16px}
+  .chip{display:inline-block;font-weight:800;padding:6px 16px;border-radius:999px;letter-spacing:.04em}
   .chip.green{background:var(--ok-bg);color:var(--ok-ink)}
   .chip.yellow{background:var(--warn-bg);color:var(--warn-ink)}
   .chip.red,.chip.neutral{background:var(--neutral-bg);color:var(--neutral-ink)}
-  .spend{font-size:1.5rem;font-weight:700;margin:8px 0 0}
-  .basis{font-size:.85rem;color:var(--muted);margin-bottom:10px}
+  .spend{font-size:1.7rem;font-weight:800;margin:10px 0 0;color:var(--red)}
+  .basis{font-size:.82rem;color:var(--muted);margin-bottom:10px}
   .results ul{padding-left:18px;margin:0 0 10px}
   .results li{margin-bottom:6px}
-  .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .spinner{display:inline-block;width:16px;height:16px;border:3px solid #cfd5da;border-top-color:var(--accent);
-    border-radius:50%;animation:sp 0.9s linear infinite;vertical-align:-3px;margin-right:8px}
+  .results li strong:after{content:":"}
+  .drop .small{font-weight:400}
+  .buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  .spinner{display:inline-block;width:16px;height:16px;border:3px solid #e4d6bf;border-top-color:var(--red);border-radius:50%;animation:sp .9s linear infinite;vertical-align:-3px;margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .disabledpanel{opacity:.75}
   .lookup-list{list-style:none;margin:8px 0 0;padding:0}
   .lookup-list li{margin:0}
-  .lookup-list button{width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;
-    padding:8px 12px;margin-bottom:6px;font:inherit;cursor:pointer}
-  .lookup-list button:hover{border-color:var(--accent)}
-  .lookup-list .addr{display:block;font-size:.85rem;color:var(--muted)}
-
-  .drop{border:2px dashed var(--line);border-radius:10px;padding:20px 12px;text-align:center;background:#fff;cursor:pointer}
-  .drop:hover,.drop.over{border-color:var(--accent);background:#fff8f3}
+  .lookup-list button{width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:6px;font:inherit;font-weight:600;cursor:pointer}
+  .lookup-list button:hover{border-color:var(--orange)}
+  .lookup-list .addr{display:block;font-size:.82rem;font-weight:400;color:var(--muted)}
+  .drop{border:2px dashed #b9a483;border-radius:14px;padding:22px 12px;text-align:center;background:#fff;cursor:pointer;font-weight:600}
+  .drop:hover,.drop.over{border-color:var(--red);background:#fff8f0}
   .filelist{list-style:none;margin:8px 0 0;padding:0}
-  .filelist li{display:flex;gap:8px;align-items:center;font-size:.9rem;padding:4px 0;border-bottom:1px solid var(--line)}
+  .filelist li{display:flex;gap:8px;align-items:center;font-size:.9rem;padding:5px 0;border-bottom:1px solid var(--line)}
   .filelist .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .filelist .st{font-size:.8rem;color:var(--muted);white-space:nowrap}
-  .filelist .st.ok{color:var(--ok-ink)} .filelist .st.fail{color:var(--err)}
-  .filelist button{background:none;border:0;color:var(--focus);cursor:pointer;font:inherit;text-decoration:underline}
-  .okbox{background:var(--ok-bg);color:var(--ok-ink);border-radius:8px;padding:12px 14px;margin:6px 0 10px}
+  .filelist .st.ok{color:var(--ok-ink);font-weight:700} .filelist .st.fail{color:var(--err);font-weight:700}
+  .filelist button{background:none;border:0;color:var(--link);cursor:pointer;font:inherit;font-weight:600;text-decoration:underline}
+  .okbox{background:var(--ok-bg);color:var(--ok-ink);border-radius:10px;padding:12px 16px;margin:6px 0 10px;font-weight:600}
+  fieldset.q{border:0;padding:0;margin:14px 0}
+  fieldset.q legend{font-weight:700;font-size:.9rem;padding:0;margin-bottom:4px}
+  fieldset.q .qh{display:block;font-size:.8rem;font-weight:400;color:var(--muted);margin-top:2px}
+  fieldset.bad{outline:2px solid var(--err);outline-offset:4px;border-radius:8px}
+  textarea{padding:10px 12px}
   [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1 id="s-title"></h1>
-  <p class="lede" id="s-lede"></p>
-  <hr class="rule">
+  <header id="intro">
+    <p class="eyebrow" id="s-eyebrow"></p>
+    <h1 id="s-title"></h1>
+    <p class="lede" id="s-lede"></p>
+    <svg class="wave" viewBox="0 0 600 36" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="wg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#F89A1E"/><stop offset="1" stop-color="#DC6F2A"/></linearGradient></defs><path d="M0 20 C 30 20, 40 17, 70 17 S 110 24, 140 24 S 190 10, 230 10 S 290 30, 330 30 S 400 5, 450 5 S 530 33, 600 18" fill="none" stroke="url(#wg)" stroke-width="3" stroke-linecap="round"/></svg>
+  </header>
 
-  <!-- STEP 1: institution and building -->
+  <!-- STEP 1: choose an offering -->
+  <h2 class="sec-title" id="s-offers-title" style="font-size:.85rem"><span class="num">1</span><span id="s-offers-t"></span></h2>
+  <div class="offers" id="offers" role="group" aria-labelledby="s-offers-t"></div>
+  <p class="small" id="s-offers-hint" style="margin:-12px 0 20px"></p>
+
+  <!-- STEP 2: institution and building -->
   <section class="step" id="step1" aria-labelledby="step1-title">
     <div class="step-head">
-      <span class="num">1</span>
+      <span class="num">2</span>
       <span class="title" id="step1-title"></span>
       <span class="sel" id="step1-sel"></span>
       <button class="linkbtn" id="step1-change" hidden></button>
@@ -143,14 +182,20 @@
     </div>
   </section>
 
-  <!-- STEP 2: panels -->
-  <div class="grid2" id="step2" hidden>
+  <!-- STEP 3: the chosen flow -->
+  <div id="step2" hidden>
     <!-- LEFT: Instant audit -->
     <section class="panel" id="ia-panel" aria-labelledby="ia-title">
       <h2 id="ia-title"></h2>
       <p class="small" id="ia-sub"></p>
 
       <div id="ia-form">
+        <div class="hint" id="ia-manual-note" hidden></div>
+        <div class="seg" id="mode-seg" role="group" aria-labelledby="s-mode-lab">
+          <button type="button" id="mode-annual" aria-pressed="false"></button>
+          <button type="button" id="mode-monthly" aria-pressed="true"></button>
+        </div>
+        <span class="small" id="s-mode-lab" style="display:block;margin:-8px 0 12px"></span>
         <div class="row3">
           <div class="field">
             <label for="sqft" id="s-sqft"></label>
@@ -211,7 +256,6 @@
           <div id="rate-line" class="okline" aria-live="polite"></div>
           <div id="hints" aria-live="polite"></div>
           <div class="ferr" id="table-err"></div>
-          <button class="linkbtn" id="to-annual" type="button"></button>
         </div>
 
         <div id="annual-block" hidden>
@@ -219,7 +263,6 @@
             <div><label for="ann-e" id="s-ann-e"></label><input type="text" id="ann-e" inputmode="decimal"><div class="ferr" id="ann-e-err"></div></div>
             <div><label for="ann-g" id="s-ann-g"></label><input type="text" id="ann-g" inputmode="decimal"></div>
           </div>
-          <button class="linkbtn" id="to-monthly" type="button"></button>
         </div>
 
         <h3 id="s-contact"></h3>
@@ -264,10 +307,55 @@
         <ul class="filelist" id="ea-files"></ul>
         <div class="ferr" id="ea-files-err"></div>
 
-        <h3 id="ea-choose"></h3>
-        <label class="check"><input type="checkbox" id="ea-desk" checked><span id="ea-desk-l"></span></label>
-        <label class="check small"><input type="checkbox" id="ea-solar" disabled><span id="ea-solar-l"></span></label>
-        <label class="check small"><input type="checkbox" disabled><span id="ea-proc-l"></span></label>
+        <h3 id="ea-use-h"></h3>
+        <div id="ea-use" tabindex="-1">
+          <label class="check"><input type="checkbox" id="ea-desk"><span id="ea-desk-l"></span></label>
+          <label class="check"><input type="checkbox" id="ea-solar"><span id="ea-solar-l"></span></label>
+        </div>
+        <div class="ferr" id="ea-use-err"></div>
+
+        <div id="ea-solar-q" hidden>
+          <h3>Solar assessment questions</h3>
+          <fieldset class="q" id="ea-sq1" tabindex="-1">
+            <legend>Are there any parts of your roof that have less than 15 years of life remaining? *</legend>
+            <label class="check"><input type="radio" name="sq1" value="yes">Yes</label>
+            <label class="check"><input type="radio" name="sq1" value="no">No</label>
+            <label class="check"><input type="radio" name="sq1" value="not_sure">I'm not sure</label>
+            <label class="check"><input type="radio" name="sq1" value="no_roof">We cannot put solar panels on our roof</label>
+          </fieldset>
+          <div class="ferr" id="ea-sq1-err"></div>
+          <fieldset class="q" id="ea-sq2" tabindex="-1" hidden>
+            <legend>Do you have plans to replace the areas of the roof with less than 15 years remaining? *</legend>
+            <label class="check"><input type="radio" name="sq2" value="yes">Yes</label>
+            <label class="check"><input type="radio" name="sq2" value="no">No</label>
+          </fieldset>
+          <div class="ferr" id="ea-sq2-err"></div>
+          <div class="field" id="ea-sq3-block" hidden>
+            <label for="ea-roof">Which areas of your roof have less than 15 years of life remaining that you do not have current plans to replace? *</label>
+            <textarea id="ea-roof" rows="2" placeholder="e.g. north roof, southeast roof..."></textarea>
+            <div class="ferr" id="ea-roof-err"></div>
+          </div>
+          <div class="field">
+            <label for="ea-budget">Do you have committed funds or plans for a capital campaign to contribute to this project? (Enter $0 if no funds are available.)</label>
+            <input type="text" id="ea-budget" inputmode="numeric" placeholder="$0">
+            <div class="ferr" id="ea-budget-err"></div>
+          </div>
+          <fieldset class="q" id="ea-sgm" tabindex="-1">
+            <legend>Is there space on your property for a ground-mount solar installation? *</legend>
+            <label class="check"><input type="radio" name="sgm" value="yes">Yes, we have open land suitable for ground-mount solar</label>
+            <label class="check"><input type="radio" name="sgm" value="no">No</label>
+            <label class="check"><input type="radio" name="sgm" value="not_interested">Not interested in ground-mount solar</label>
+          </fieldset>
+          <div class="ferr" id="ea-sgm-err"></div>
+          <div class="field" id="ea-sgm-detail" hidden>
+            <label for="ea-gmdesc">Describe the available space (optional)</label>
+            <textarea id="ea-gmdesc" rows="2" placeholder="e.g. about 2 acres next to the school parking lot, unused field behind the rectory..."></textarea>
+          </div>
+          <div class="field">
+            <label for="ea-notes">Additional notes (optional)</label>
+            <textarea id="ea-notes" rows="3"></textarea>
+          </div>
+        </div>
 
         <h3 id="ea-about"></h3>
         <div class="field">
@@ -289,6 +377,7 @@
           <div class="field"><label for="ea-email" id="s-ea-email"></label><input type="email" id="ea-email" autocomplete="email"><div class="ferr" id="ea-email-err"></div></div>
           <div class="field"><label for="ea-phone" id="s-ea-phone"></label><input type="tel" id="ea-phone" autocomplete="tel"></div>
         </div>
+        <div class="field"><label for="ea-role" id="s-ea-role"></label><input type="text" id="ea-role" autocomplete="organization-title"></div>
         <label class="check"><input type="checkbox" id="ea-consent"><span id="s-ea-consent"></span></label>
         <div class="ferr" id="ea-consent-err"></div>
 
@@ -309,7 +398,7 @@
           <ul class="filelist" id="ea-failed-list"></ul>
           <button class="secondary" id="ea-retry" type="button"></button>
         </div>
-        <div class="buttons"><button class="secondary" id="ea-another" type="button"></button></div>
+        <div class="buttons"><a class="btn-link" id="ea-book" target="_top" rel="noopener"></a><button class="secondary" id="ea-another" type="button"></button></div>
       </div>
     </section>
   </div>
@@ -323,9 +412,13 @@ var SHOW_LIGHT_WORD = false;   // Ian has not decided; the chip shows the headli
 
 /* ------------------------------------------------------------------ strings (UI-owned words) */
 var S = {
-  title: 'Energy Assessment Resource Center',
-  lede: 'Find your institution and building, then get a quick first look from your own figures, or upload your bills for a fuller assessment.',
-  step1: 'Your institution and building',
+  eyebrow: 'Energy Assessment Resource Center', title: 'Get Your Free Energy Assessment',
+  lede: 'Choose where to start. We walk with you at your own pace: no pressure, and no cost to Catholic organizations.',
+  step1: 'Find your institution and building', offersT: 'Choose where to start',
+  iaManual: 'Instant Audit works with a building that is already on file. To add a new building, choose Desk Audit or Solar Assessment above: they add it for our team to review.',
+  modeLab: 'Month by month gives the most accurate result. No monthly figures handy? Annual totals will do.',
+  modeAnnual: 'Annual totals', modeMonthly: 'Month by month', moreAccurate: 'Make this more accurate: enter month by month',
+  bookCall: 'Book a call', nextLookup: 'Next, find your institution and building below.',
   zip: 'ZIP code of the institution', zipGo: 'Find my institution',
   change: 'Change', addBuilding: 'My building is not listed',
   searching: 'Searching...', noAccounts: 'We did not find an institution for that ZIP code. Check the ZIP code and try again.',
@@ -353,7 +446,11 @@ var S = {
   busy: 'Too many requests from this connection. Try again in a few minutes.',
   reportBtn: 'Download report', reportPrep: 'Preparing your report', checkBills: 'Check it with your bills',
   another: 'Start another building', perYear: '{n} a year',
-  eaTitle: 'Energy assessments', eaSub: 'Have your bills? Upload them and we will take a closer look.',
+  eaTitleDesk: 'Desk Audit', eaTitleSolar: 'Solar Assessment', eaTitleBoth: 'Desk Audit and Solar Assessment', eaTitleNone: 'Upload your bills',
+  eaUseH: 'Use these bills for', eaDeskL: 'Desk Audit: we read your bills and show where the strongest opportunities may be',
+  eaSolarL: 'Solar Assessment: we look at whether solar could work for your roof or grounds', eaRole: 'Title / role (optional)',
+  offersHint: 'Choose Desk Audit, Solar Assessment, or both. The same bills are used for each.',
+  eaTitle: 'Desk Audit', eaSub: 'Upload your utility bills and we will take a closer look.',
   eaDrop: 'Drop your bills here, or click to choose files', eaNote: 'PDF, JPG or PNG. Up to 36 files, 25 MB each. Filed to your institution\'s record.',
   eaChoose: 'What would you like?', eaDesk: 'Desk audit', eaSolar: 'Solar assessment (questions coming next)', eaProc: 'Procurement (coming soon)',
   eaAbout: 'About this building and you', eaSqft: 'Total square feet', eaMtype: 'Building type', eaMaddr: 'Full street address',
@@ -367,7 +464,7 @@ var S = {
   eaRetry: 'Try the failed bills again', eaFailedT: 'These bills did not upload:',
   eaNoFiles: 'Choose at least one bill.', eaTooMany: 'You can upload up to 36 files.',
   eaBadType: '{name} is not a PDF, JPG or PNG file.', eaTooBig: '{name} is larger than 25 MB.', eaEmpty: '{name} is empty.',
-  eaNeedChoice: 'Tick Desk audit to submit your bills.',
+  eaNeedChoice: 'Choose Desk Audit, Solar Assessment, or both.',
   eaFail: 'Something went wrong and your information was not saved. Try again.',
   eaLinkExpired: 'The upload took too long and its link expired. Please submit again.',
   eaStatusWait: 'Waiting', eaStatusUp: 'Uploading', eaStatusOk: 'Saved', eaStatusFail: 'Failed',
@@ -408,21 +505,28 @@ function parseNum(s){
   if (t === '') return null;
   return /^-?\d*\.?\d+$/.test(t) ? Number(t) : NaN;
 }
+var isEmbedded = (window.self !== window.top);
 function postHeight(){
-  var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-  try { parent.postMessage({type:'ceEscoHeight', height:h}, '*'); } catch(e){}
+  if (!isEmbedded) return;
+  var h = Math.ceil(document.body.getBoundingClientRect().height);   // content height, so the frame can shrink as well as grow
+  try { parent.postMessage({ceEscoHeight: h}, '*'); } catch(e){}   // same shape the other CE forms send
 }
 function scrollParentTo(node){
-  var y = node.getBoundingClientRect().top + window.scrollY;
-  try { parent.postMessage({type:'ceEscoScroll', top:y}, '*'); } catch(e){}
-  node.scrollIntoView({behavior:'smooth', block:'start'});
+  if (isEmbedded){
+    // Tell the Squarespace snippet where inside the frame to land (ceEscoScrollTo), so a result lower on the page is in view.
+    var y = Math.max(0, Math.round(node.getBoundingClientRect().top + window.scrollY));
+    try { parent.postMessage({ceEscoScrollTo: y}, '*'); } catch(e){}
+  } else {
+    node.scrollIntoView({behavior:'smooth', block:'start'});
+  }
 }
 
 /* ------------------------------------------------------------------ static text */
 function setText(id, t){ $(id).textContent = t; }
 (function initText(){
   document.title = S.title;
-  setText('s-title', S.title); setText('s-lede', S.lede);
+  setText('s-eyebrow', S.eyebrow); setText('s-title', S.title); setText('s-lede', S.lede); setText('s-offers-t', S.offersT);
+  setText('s-mode-lab', S.modeLab); setText('mode-annual', S.modeAnnual); setText('mode-monthly', S.modeMonthly); setText('ea-book', S.bookCall);
   setText('step1-title', S.step1); setText('s-zip-label', S.zip); setText('zip-go', S.zipGo);
   setText('step1-change', S.change);
   setText('s-manual-title', S.manualTitle); setText('s-mname', S.mName); setText('s-maddr', S.mAddr); setText('m-use', S.useManual);
@@ -434,17 +538,17 @@ function setText(id, t){ $(id).textContent = t; }
   var opts = $('gasunit').options; opts[0].textContent = 'Therms'; opts[1].textContent = 'CCF';
   setText('th-month', S.thMonth); setText('th-ekwh', S.thEkwh); setText('th-ecost', S.thEcost);
   setText('th-gus', S.thGus); setText('th-gcost', S.thGcost); setText('tot-label', S.total);
-  setText('s-paste-hint', S.pasteHint); setText('to-annual', S.toAnnual); setText('to-monthly', S.toMonthly);
+  setText('s-paste-hint', S.pasteHint);
   setText('s-ann-e', S.annE); setText('s-ann-g', S.annG);
   setText('s-contact', S.contact); setText('s-cname', S.cName); setText('s-cemail', S.cEmail); setText('s-cphone', S.cPhone);
   setText('s-consent', S.consent); setText('submit', S.submit); setText('s-working', S.working);
   setText('ea-title', S.eaTitle); setText('ea-sub', S.eaSub); setText('ea-drop-t', S.eaDrop); setText('ea-drop-note', S.eaNote);
-  setText('ea-choose', S.eaChoose); setText('ea-desk-l', S.eaDesk); setText('ea-solar-l', S.eaSolar); setText('ea-proc-l', S.eaProc);
   setText('ea-about', S.eaAbout); setText('s-ea-sqft', S.eaSqft); setText('s-ea-mtype', S.eaMtype); setText('s-ea-maddr', S.eaMaddr);
   setText('s-ea-first', S.eaFirst); setText('s-ea-last', S.eaLast); setText('s-ea-email', S.eaEmail); setText('s-ea-phone', S.eaPhone);
   setText('s-ea-consent', S.eaConsent); setText('ea-submit', S.eaSubmit); setText('ea-note', S.eaSubmitNote);
+  setText('ea-use-h', S.eaUseH); setText('ea-desk-l', S.eaDeskL); setText('ea-solar-l', S.eaSolarL); setText('s-ea-role', S.eaRole); setText('s-offers-hint', S.offersHint);
   setText('ea-failed-t', S.eaFailedT); setText('ea-retry', S.eaRetry); setText('ea-another', S.another);
-  BTYPES.slice(1).forEach(function(o){ $('ea-mtype').appendChild(el('option',{value:o[1]},o[1])); });
+  ['Church','Cathedral','School','Rectory','Convent','Hall','Office','Gymnasium','Other'].forEach(function(t){ $('ea-mtype').appendChild(el('option',{value:t},t)); });   // same list as the Solar form
   $('ea-mtype').insertBefore(el('option',{value:''},'Choose...'), $('ea-mtype').firstChild); $('ea-mtype').value = '';
   BTYPES.forEach(function(o){ $('btype').appendChild(el('option',{value:o[0]},o[1])); });
   HFUELS.forEach(function(o){ $('hfuel').appendChild(el('option',{value:o[0]},o[1])); });
@@ -469,6 +573,7 @@ function lkStatus(t){ $('lk-status').textContent = t || ''; }
 function clearLists(){ $('lk-accounts').textContent=''; $('lk-buildings').textContent=''; }
 
 $('zip-go').addEventListener('click', findAccounts);
+$('zip').addEventListener('input', function(){ if (this.value.replace(/\D/g,'').length === 5) findAccounts(); });
 $('zip').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); findAccounts(); } });
 
 function findAccounts(){
@@ -478,6 +583,7 @@ function findAccounts(){
   getJSON('/accounts?zip=' + encodeURIComponent(zip)).then(function(d){
     var list = (d && d.accounts) || [];
     if (!list.length){ lkStatus(S.noAccounts); postHeight(); return; }
+    if (list.length === 1){ pickAccount(list[0]); return; }   // one match: no need to ask
     lkStatus(S.pickAccount);
     list.forEach(function(a){
       var li = el('li'); var b = el('button',{type:'button'}); b.appendChild(document.createTextNode(a.name || ''));
@@ -520,7 +626,7 @@ function pickBuilding(b){
   $('step1-body').hidden = true;
   $('step1-sel').textContent = (state.account ? state.account.name : '') + ' \u00b7 ' + b.name + (b.address ? ' \u00b7 ' + b.address : '');
   $('step1-change').hidden = false;
-  $('step2').hidden = false;
+  updateFlows();
   // county figure (reference only)
   var note = '';
   $('county-wrap').hidden = true; $('county-use').checked = false;
@@ -668,9 +774,17 @@ function refreshTotals(){
 }
 $('hfuel').addEventListener('change', function(){ refreshTotals(); edited(); });
 
-/* annual / monthly mode */
-$('to-annual').addEventListener('click', function(){ state.mode='annual'; $('monthly-block').hidden=true; $('month-controls').hidden=true; $('annual-block').hidden=false; edited(); postHeight(); });
-$('to-monthly').addEventListener('click', function(){ state.mode='monthly'; $('monthly-block').hidden=false; $('month-controls').hidden=false; $('annual-block').hidden=true; edited(); postHeight(); });
+/* entry mode: annual totals or month by month (switch sits at the top of the form) */
+var DEFAULT_MODE = 'monthly';   // flip to 'annual' once annual results are confirmed against monthly ones
+function setMode(m){
+  state.mode = m;
+  $('monthly-block').hidden = (m !== 'monthly'); $('month-controls').hidden = (m !== 'monthly'); $('annual-block').hidden = (m !== 'annual');
+  $('mode-annual').setAttribute('aria-pressed', m === 'annual' ? 'true' : 'false');
+  $('mode-monthly').setAttribute('aria-pressed', m === 'monthly' ? 'true' : 'false');
+  edited(); postHeight();
+}
+$('mode-annual').addEventListener('click', function(){ setMode('annual'); });
+$('mode-monthly').addEventListener('click', function(){ setMode('monthly'); });
 
 /* ------------------------------------------------------------------ validation + payload */
 var errs;
@@ -696,6 +810,7 @@ function showErrs(list){
 }
 function validate(){
   errs = [];
+  if (state.building && state.building.manual) addErr('building', null, S.iaManual);   // the result attaches to a building record that must already exist
   var sq = parseNum($('sqft').value);
   if (sq == null || isNaN(sq) || sq < 1 || sq > 5000000 || Math.round(sq) !== sq) addErr('facts.sqft_total','sqft','Enter the total square feet as a whole number from 1 to 5,000,000.');
   if (!$('btype').value) addErr('facts.building_type','btype','Choose a building type.');
@@ -848,7 +963,7 @@ function renderResult(body){
   var sm = r.summary || {};
   if (sm.used && sm.used.length){
     var ul = el('ul');
-    sm.used.forEach(function(u){ var li = el('li'); li.appendChild(el('strong',null,(u.lead || '') + ' ')); li.appendChild(document.createTextNode(u.text || '')); ul.appendChild(li); });
+    sm.used.forEach(function(u){ var li = el('li'); li.appendChild(el('strong',null,u.lead || '')); li.appendChild(document.createTextNode(' ' + (u.text || ''))); ul.appendChild(li); });
     box.appendChild(ul);
   }
   if (sm.means) box.appendChild(el('p',null,sm.means));
@@ -856,11 +971,17 @@ function renderResult(body){
   if (sm.note) box.appendChild(el('p',{'class':'small'},sm.note));
   if (r.honesty_line) box.appendChild(el('p',{'class':'small'},r.honesty_line));
   var btns = el('div',{'class':'buttons'}); box.appendChild(btns);
+  var book = el('a',{'class':'btn-link',href:BOOK_URL,target:'_top',rel:'noopener'}, S.bookCall); btns.appendChild(book);
   var slot = el('span'); btns.appendChild(slot);
   renderReport(body.report, slot, body.submission_id || state.submissionId);
   var cb = el('button',{type:'button','class':'secondary'},S.checkBills);
-  cb.addEventListener('click', function(){ $('ea-desk').checked = true; prefillRight(); var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
+  cb.addEventListener('click', function(){ selectOffer('desk', true); var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
   btns.appendChild(cb);
+  if (state.mode === 'annual'){
+    var more = el('button',{type:'button','class':'secondary'},S.moreAccurate);
+    more.addEventListener('click', function(){ setMode('monthly'); show('form'); scrollParentTo($('ia-panel')); });
+    btns.appendChild(more);
+  }
   var again = el('button',{type:'button','class':'secondary'},S.another); again.addEventListener('click', startAnother); btns.appendChild(again);
   show('results'); scrollParentTo(box);
 }
@@ -886,7 +1007,7 @@ function renderReport(rep, slot, id){
 /* ------------------------------------------------------------------ reset */
 function resetForm(keepBuilding){
   stopPoll(); state.submissionId = null; state.busy = false; $('submit').disabled = false;
-  state.mode = 'monthly'; $('monthly-block').hidden = false; $('month-controls').hidden = false; $('annual-block').hidden = true;
+  setMode(DEFAULT_MODE);
   ['btype','hfuel'].forEach(function(i){ $(i).value = ''; });
   ['shared','ann-e','ann-g','c-name','c-email','c-phone','website'].forEach(function(i){ $(i).value = ''; });
   $('consent').checked = false; $('county-use').checked = false;
@@ -894,7 +1015,7 @@ function resetForm(keepBuilding){
   $('startmonth').value = defaultStart(); $('gasunit').value = 'therms';
   // map the building's recorded type to our list only when it matches exactly (never guess)
   if (keepBuilding && state.building && state.building.type){
-    var m = {'Worship':'worship','School':'school','Office':'office-chancery','Residence':'residence'}[state.building.type];
+    var m = {'Church':'worship','Cathedral':'worship','School':'school','Office':'office-chancery','Rectory':'residence','Convent':'residence','Hall':'hall-gym','Gymnasium':'hall-gym'}[state.building.type];
     if (m) $('btype').value = m;
   }
   $('grid-body').textContent = ''; buildRows(); clearErrs(); show('form');
@@ -917,7 +1038,7 @@ var MAX_FILES = 36, MAX_BYTES = 25 * 1024 * 1024, BILL_EXT = /\.(pdf|jpe?g|png)$
 var ea = { files: [], up: null, busy: false };
 
 function eaClearErrs(){
-  ['ea-files-err','ea-sqft-err','ea-mtype-err','ea-maddr-err','ea-first-err','ea-last-err','ea-email-err','ea-consent-err'].forEach(function(i){ setText(i,''); });
+  ['ea-use-err','ea-sq1-err','ea-sq2-err','ea-roof-err','ea-budget-err','ea-sgm-err','ea-files-err','ea-sqft-err','ea-mtype-err','ea-maddr-err','ea-first-err','ea-last-err','ea-email-err','ea-consent-err'].forEach(function(i){ setText(i,''); });
   var bad = $('ea-panel').querySelectorAll('.bad'); for (var i=0;i<bad.length;i++) bad[i].classList.remove('bad');
   $('ea-errsummary').hidden = true; $('ea-errsummary').textContent = '';
 }
@@ -983,7 +1104,7 @@ function prefillRight(){
 function eaValidate(){
   var out = [];
   if (!ea.files.length) out.push({id:'ea-files', message:S.eaNoFiles});
-  if (!$('ea-desk').checked) out.push({id:null, message:S.eaNeedChoice});
+  if (!state.bills.desk && !state.bills.solar) out.push({id:'ea-use', message:S.eaNeedChoice});
   var sq = parseNum($('ea-sqft').value);
   if (sq == null || isNaN(sq) || sq <= 0 || sq > 5000000) out.push({id:'ea-sqft', message:'Enter the total square feet as a number.'});
   if (state.building && state.building.manual){
@@ -994,7 +1115,7 @@ function eaValidate(){
   if (!$('ea-last').value.trim()) out.push({id:'ea-last', message:'Enter your last name.'});
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('ea-email').value.trim())) out.push({id:'ea-email', message:'Enter an email address we can reach you at.'});
   if (!$('ea-consent').checked) out.push({id:'ea-consent', message:'Please tick the box to agree.'});
-  return out;
+  return out.concat(eaSolarValidate());
 }
 
 function postJSON(path, body){
@@ -1055,8 +1176,47 @@ function eaUploadAll(files){
   return next().then(function(){ return failed; });
 }
 
+
+/* Solar Assessment questions: wording, answer values and payload mirror ce-forms/solar/ce_sun_form_v2.html and POST /submit */
+function checkedVal(name){ var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : null; }
+function eaSolarSync(){
+  var q1 = checkedVal('sq1'), q2 = checkedVal('sq2');
+  $('ea-sq2').hidden = (q1 !== 'yes'); $('ea-sq3-block').hidden = !(q1 === 'yes' && q2 === 'no'); $('ea-sgm-detail').hidden = (checkedVal('sgm') !== 'yes');
+  postHeight();
+}
+['sq1','sq2','sgm'].forEach(function(n){ Array.prototype.forEach.call(document.querySelectorAll('input[name="' + n + '"]'), function(r){ r.addEventListener('change', eaSolarSync); }); });
+function eaSolarValidate(){
+  if (!state.bills.solar) return [];
+  var out = [], q1 = checkedVal('sq1'), q2 = checkedVal('sq2');
+  if (!q1) out.push({id:'ea-sq1', message:'Please answer the roof question.'});
+  if (q1 === 'yes' && !q2) out.push({id:'ea-sq2', message:'Please answer the roof replacement question.'});
+  if (q1 === 'yes' && q2 === 'no' && !$('ea-roof').value.trim()) out.push({id:'ea-roof', message:'Please describe the affected roof areas.'});
+  var bud = parseNum($('ea-budget').value);
+  if (bud != null && (isNaN(bud) || bud < 0)) out.push({id:'ea-budget', message:'Enter a dollar amount, or $0.'});
+  if (!checkedVal('sgm')) out.push({id:'ea-sgm', message:'Please answer the ground-mount question.'});
+  return out;
+}
+function eaSolarBody(files){
+  var b = state.building, acc = state.account, q1 = checkedVal('sq1'), q2 = checkedVal('sq2'), gm = checkedVal('sgm');
+  var bud = parseNum($('ea-budget').value), manual = !!b.manual;
+  return {
+    timestamp: new Date().toISOString(), sf_account_id: acc.id, sf_account_name: acc.name,
+    contact: {firstname: $('ea-first').value.trim(), lastname: $('ea-last').value.trim(), email: $('ea-email').value.trim(),
+              phone: $('ea-phone').value.trim(), title: $('ea-role').value.trim(), notes: $('ea-notes').value.trim()},
+    buildings: [{
+      sf_building_id: manual ? 'NEW' : b.id, building_name: b.name || '',
+      building_type: manual ? $('ea-mtype').value : (b.type || ''), building_address: manual ? $('ea-maddr').value.trim() : (b.address || ''),
+      gm_answer: gm, gm_desc: gm === 'yes' ? $('ea-gmdesc').value.trim() : '',
+      manually_added: manual, qa_status: manual ? 'PENDING_QA' : 'APPROVED',
+      bill_count: files.length, bill_filenames: files.map(function(f){ return f.name; }).join(', ') || 'None', bill_files: [],   // bills travel separately, below
+      q1: q1, q2: q2 || 'N/A', roof: (q1 === 'yes' && q2 === 'no') ? $('ea-roof').value.trim() : 'N/A', budget: String(bud == null ? 0 : bud)
+    }]
+  };
+}
+
 function eaFinish(failed){
   var up = ea.up;
+  if (!up.want.desk){ up.failed = failed; eaDone(); return Promise.resolve(); }   // Solar only: bills are filed, no Desk Audit requested
   setText('ea-prog-text', S.eaFinishing); eaShow('progress');
   return postJSON('/screening-complete', {building_id: up.buildingId, submission_id: up.sid, token: up.token,
       failed: failed.map(function(f){ return f.name; })})
@@ -1086,7 +1246,7 @@ $('ea-submit').addEventListener('click', function(){
   var body = {
     sf_account_id: acc.id, upload_mode: 'separate',
     contact: {first_name: $('ea-first').value.trim(), last_name: $('ea-last').value.trim(),
-              email: $('ea-email').value.trim(), phone: $('ea-phone').value.trim()},
+              email: $('ea-email').value.trim(), phone: $('ea-phone').value.trim(), role: $('ea-role').value.trim()},
     buildings: [{
       sf_building_id: b.manual ? 'NEW' : b.id, manually_added: !!b.manual,
       building_name: b.name || '',
@@ -1102,12 +1262,18 @@ $('ea-submit').addEventListener('click', function(){
     }]
   };
   ea.busy = true; $('ea-submit').disabled = true;
+  var want = {desk: !!state.bills.desk, solar: !!state.bills.solar};
   setText('ea-prog-text', S.eaSaving); eaProgList([], $('ea-prog-files')); eaShow('progress');
-  postJSON('/screening-request', body).then(function(r){
+  var first = Promise.resolve();
+  if (want.solar){
+    // Solar answers first; the bills then travel one at a time through the screening upload (same as the Desk Audit)
+    first = postJSON('/submit', eaSolarBody(files)).then(function(r){ if (!(r.body && r.body.success)) throw new Error('solar'); });
+  }
+  first.then(function(){ return postJSON('/screening-request', body); }).then(function(r){
     if (r.status === 400 && r.body && r.body.errors){ return eaFail(r.body.errors.join(' ')); }
     if (!(r.body && r.body.success && r.body.records && r.body.records[0] && r.body.records[0].uploadToken)) return eaFail(S.eaFail);
     var rec = r.body.records[0];
-    ea.up = {buildingId: rec.buildingId, sid: r.body.submissionId, token: rec.uploadToken, files: files, failed: [], expired: false};
+    ea.up = {buildingId: rec.buildingId, sid: r.body.submissionId, token: rec.uploadToken, files: files, failed: [], expired: false, want: want};
     return eaUploadAll(files).then(function(failed){
       if (ea.up.expired) return eaFail(S.eaLinkExpired);
       return eaFinish(failed);
@@ -1129,16 +1295,89 @@ function resetRight(){
   ea.files = []; ea.up = null; ea.busy = false; $('ea-submit').disabled = false;
   eaRender(); eaClearErrs();
   ['ea-sqft','ea-first','ea-last','ea-email','ea-phone','ea-maddr'].forEach(function(i){ $(i).value = ''; });
-  $('ea-mtype').value = ''; $('ea-consent').checked = false; $('ea-desk').checked = true;
+  $('ea-mtype').value = ''; $('ea-consent').checked = false; $('ea-role').value = '';
+  ['ea-roof','ea-budget','ea-gmdesc','ea-notes'].forEach(function(i){ $(i).value = ''; });
+  ['sq1','sq2','sgm'].forEach(function(n){ Array.prototype.forEach.call(document.querySelectorAll('input[name="' + n + '"]'), function(r){ r.checked = false; }); });
+  eaSolarSync();
   var man = !!(state.building && state.building.manual);
   $('ea-manual').hidden = !man;
   if (man){ $('ea-maddr').value = state.building.address || ''; }
   eaShow('form');
 }
 
+
+/* ------------------------------------------------------------------ offerings (the choices this page is about) */
+var BOOK_URL = 'https://www.catholicenergies.org/get-started';
+var OFFERS = [
+  {id:'instant', label:'No bills needed', title:'Instant Audit', text:'Enter your numbers and get a first look in about two minutes.', live:true},
+  {id:'desk', label:'Upload your bills', title:'Desk Audit', text:'We read your utility bills and show where the strongest opportunities may be.', live:true},
+  {id:'solar', label:'Upload your bills', title:'Solar Assessment', text:'See whether solar could work for your roof or grounds.', live:true},
+  {id:'proc', label:'Clean energy', title:'Procurement', text:'Find incentives and options for buying cleaner energy.', live:false, badge:'Coming soon'}
+];
+state.offer = null; state.bills = {desk:false, solar:false};
+(function buildOffers(){
+  var box = $('offers');
+  OFFERS.forEach(function(o){
+    var b = el('button',{type:'button','class':'offer','data-offer':o.id,'aria-pressed':'false'});
+    if (!o.live) b.setAttribute('disabled','disabled');
+    b.appendChild(el('span',{'class':'lab'}, o.label));
+    b.appendChild(el('span',{'class':'ttl'}, o.title));
+    b.appendChild(el('span',{'class':'txt'}, o.text));
+    b.appendChild(el('span',{'class':'go'}, o.live ? 'Start' : o.badge));
+    if (o.live) b.addEventListener('click', function(){ selectOffer(o.id); });
+    box.appendChild(b);
+  });
+})();
+function selectOffer(id, forceOn){
+  var prev = state.offer;
+  if (id === 'instant'){ state.offer = 'instant'; state.bills = {desk:false, solar:false}; }
+  else {
+    if (state.offer !== 'bills'){ state.offer = 'bills'; state.bills = {desk:false, solar:false}; }
+    state.bills[id] = forceOn ? true : !state.bills[id];   // Desk Audit and Solar Assessment can be combined
+  }
+  syncOfferUI();
+  if (!state.building) lkStatus(S.nextLookup);
+  if (prev && prev !== state.offer){ if (state.offer === 'bills') prefillRight(); else prefillLeft(); }
+  updateFlows();
+  if (!state.building) scrollParentTo($('step1'));
+}
+function syncOfferUI(){
+  Array.prototype.forEach.call($('offers').children, function(b){
+    var id = b.getAttribute('data-offer');
+    var on = (id === 'instant') ? state.offer === 'instant' : !!state.bills[id];
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  $('ea-desk').checked = !!state.bills.desk; $('ea-solar').checked = !!state.bills.solar;
+  $('ea-solar-q').hidden = !state.bills.solar;
+  setText('ea-title', state.bills.desk && state.bills.solar ? S.eaTitleBoth : state.bills.solar ? S.eaTitleSolar : state.bills.desk ? S.eaTitleDesk : S.eaTitleNone);
+  postHeight();
+}
+$('ea-desk').addEventListener('change', function(){ state.bills.desk = this.checked; syncOfferUI(); });
+$('ea-solar').addEventListener('change', function(){ state.bills.solar = this.checked; syncOfferUI(); });
+function updateFlows(){
+  var show = !!(state.offer && state.building);
+  $('step2').hidden = !show;
+  $('ia-panel').hidden = state.offer !== 'instant';
+  var man = !!(state.building && state.building.manual && state.offer === 'instant');
+  $('ia-manual-note').hidden = !man; if (man) setText('ia-manual-note', S.iaManual);
+  $('ea-panel').hidden = state.offer !== 'bills';
+  postHeight();
+}
+// desk -> instant: carry over what the client already typed (never overwrites left-hand entries)
+function prefillLeft(){
+  if (!$('sqft').value && $('ea-sqft').value) $('sqft').value = $('ea-sqft').value;
+  var nm = ($('ea-first').value.trim() + ' ' + $('ea-last').value.trim()).trim();
+  if (nm && !$('c-name').value) $('c-name').value = nm;
+  if (!$('c-email').value) $('c-email').value = $('ea-email').value;
+  if (!$('c-phone').value) $('c-phone').value = $('ea-phone').value;
+  if (!$('consent').checked && $('ea-consent').checked) $('consent').checked = true;
+}
+if (/[?&]bare=1/.test(location.search)) $('intro').hidden = true;   // hide the heading when the Squarespace page already has one
+
 /* ------------------------------------------------------------------ init */
 $('startmonth').value = defaultStart();
 buildRows();
+syncOfferUI();
 if (window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
 window.addEventListener('load', postHeight);
 </script>

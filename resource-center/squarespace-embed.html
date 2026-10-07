@@ -1,0 +1,34 @@
+<!--
+  Squarespace embed snippet for the Energy Assessment Resource Center
+  ====================================================================
+  CANONICAL SOURCE of the Code Block on the "Energy Assessment Resource Center" page at
+  catholicenergies.org. NOT served by Netlify: it is kept here so the snippet is version-controlled.
+  Paste the body below (everything after this comment) into a plain CODE block, NOT an "Embed" block
+  (the Embed block wraps content in a 16:9 video letterbox).
+
+  How it works: the page posts its content height (ceEscoHeight) whenever it changes, so the frame grows
+  and shrinks to fit. After a step or a result it posts ceEscoScrollTo (a position inside the frame) and
+  the listener scrolls the Squarespace page to that spot. Same ceEscoHeight message as the other CE forms.
+
+  If the Squarespace page already has its own heading, add ?bare=1 to the address to hide the page's heading:
+  src="https://ce-resource-center.netlify.app/?bare=1"
+
+  Test on the public page, not the editor (the editor disables embedded scripts).
+-->
+<iframe id="ce-resource-frame" src="https://ce-resource-center.netlify.app/"
+        style="width:100%;border:0;display:block" height="700"
+        scrolling="no" title="Energy Assessment Resource Center"></iframe>
+<script>
+(function () {
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    var f = document.getElementById('ce-resource-frame');
+    if (!f) return;
+    if (d.ceEscoHeight) { f.style.height = d.ceEscoHeight + 'px'; }
+    if (typeof d.ceEscoScrollTo === 'number') {
+      var top = f.getBoundingClientRect().top + window.pageYOffset + d.ceEscoScrollTo - 16;
+      window.scrollTo({ top: top, behavior: 'smooth' });
+    }
+  });
+})();
+</script>
