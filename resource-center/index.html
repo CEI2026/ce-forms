@@ -121,6 +121,13 @@
   .lookup-list .addr{display:block;font-size:.82rem;font-weight:400;color:var(--muted)}
   .drop{border:2px dashed #b9a483;border-radius:14px;padding:22px 12px;text-align:center;background:#fff;cursor:pointer;font-weight:600}
   .drop:hover,.drop.over{border-color:var(--red);background:#fff8f0}
+  .reuse{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 14px;margin:0 0 12px}
+  .reuse h3{margin:0 0 6px}
+  .reuse .opt{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:.92rem;font-weight:400}
+  .reuse .opt input{margin-top:5px}
+  .reuse .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .reuse .linkbtn{background:none;border:0;padding:0;color:var(--link);text-decoration:underline;font:inherit;cursor:pointer}
+  .reuse input[type=text],.reuse input[type=email],.reuse input[type=tel],.reuse textarea{width:100%;max-width:340px}
   .filelist{list-style:none;margin:8px 0 0;padding:0}
   .filelist li{display:flex;gap:8px;align-items:center;font-size:.9rem;padding:5px 0;border-bottom:1px solid var(--line)}
   .filelist .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -299,6 +306,8 @@
       <p class="small" id="ea-sub"></p>
 
       <div id="ea-form">
+        <div class="reuse" id="ea-reuse" hidden aria-live="polite"></div>
+        <div id="ea-newfiles">
         <div class="drop" id="ea-drop" tabindex="0" role="button" aria-describedby="ea-drop-note">
           <div id="ea-drop-t"></div>
           <div class="small" id="ea-drop-note"></div>
@@ -307,6 +316,7 @@
         <div class="small" id="ea-count" aria-live="polite"></div>
         <ul class="filelist" id="ea-files"></ul>
         <div class="ferr" id="ea-files-err"></div>
+        </div>
 
         <h3 id="ea-use-h"></h3>
         <div id="ea-use" tabindex="-1">
@@ -465,6 +475,16 @@ var S = {
   eaDone: 'Thank you. Your bills are filed and we\'ll get back to you soon with the results.',
   eaDonePartial: 'Your information is saved, but {n} bill(s) did not upload. Please try those again.',
   eaRetry: 'Try the failed bills again', eaFailedT: 'These bills did not upload:',
+  rzH: 'Already uploaded bills for this building?', rzP: 'You can use those bills again. We will email you a one-time code first, to protect your records.',
+  rzUse: 'Use bills I uploaded before', rzWhere: 'Where should we send the code?', rzSend: 'Send the code', rzNone: 'I can\'t use these addresses',
+  rzSent: 'We sent a 6-digit code to {m}. It works for 15 minutes.', rzCode: 'Code', rzVerify: 'Check the code', rzResend: 'Send a new code', rzBack: 'Back',
+  rzPick: 'Which bills would you like to use?', rzSet: '{n} bill(s) uploaded {d} \u00b7 usable until {x}', rzUseThese: 'Use these bills',
+  rzNew: 'Upload new bills instead', rzChosen: 'Using {n} bill(s) uploaded {d}.', rzChange: 'Upload different bills instead',
+  rzHelpH: 'Ask us for help', rzHelpP: 'Tell us how to reach you and we will help you get to your earlier bills, or you can upload them again.',
+  rzName: 'Your name', rzEmail: 'Your email', rzPhone: 'Phone (optional)', rzMsg: 'Anything we should know (optional)', rzHelpSend: 'Send request',
+  rzHelpDone: 'Thank you. We will be in touch. You can also upload your bills again now.', rzFail: 'We could not do that. Please try again.',
+  rzNeedEmail: 'Enter an email address we can reach you at.', rzNeedCode: 'Enter the 6-digit code.', rzNeedPick: 'Choose where to send the code.',
+  eaDoneReuse: 'Thank you. We are using the bills you uploaded before, and we\'ll get back to you soon with the results.',
   eaNoFiles: 'Choose at least one bill.', eaTooMany: 'You can upload up to 36 files.',
   eaBadType: '{name} is not a PDF, JPG or PNG file.', eaTooBig: '{name} is larger than 25 MB.', eaEmpty: '{name} is empty.',
   eaNeedChoice: 'Choose Desk Audit, Solar Assessment, or both.',
@@ -1041,7 +1061,125 @@ function startAnother(){
 
 /* ------------------------------------------------------------------ Energy assessments: bill upload (Desk audit) */
 var MAX_FILES = 36, MAX_BYTES = 25 * 1024 * 1024, BILL_EXT = /\.(pdf|jpe?g|png)$/i;
-var ea = { files: [], up: null, busy: false };
+var ea = { files: [], up: null, busy: false, rz: null, rzTok: 0 };
+
+/* ---- Bills uploaded before (middleware 8.2.0). Hidden unless the middleware says it is on and has bills for this building. ---- */
+function rzFresh(){ return {phase:'hidden', building:null, options:[], optId:'', challenge:'', masked:'', session:'', sets:[], chosen:null, msg:'', busy:false}; }
+ea.rz = rzFresh();
+function rzDate(s){ var d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}); }
+function rzProbe(){
+  var b = state.building, rz = ea.rz;
+  if (state.offer !== 'bills' || !b || b.manual || !b.id){ if (rz.phase !== 'hidden' && (!b || b.manual)){ ea.rz = rzFresh(); rzRender(); } return; }
+  if (rz.building === b.id) return;
+  var tok = ++ea.rzTok; ea.rz = rzFresh(); ea.rz.building = b.id;
+  postJSON('/bills/options', {building_id: b.id}).then(function(r){
+    if (tok !== ea.rzTok || !(r.body && r.body.success && r.body.enabled && r.body.options && r.body.options.length)) return;
+    ea.rz.options = r.body.options; ea.rz.phase = 'offer'; rzRender();
+  }).catch(function(){});
+}
+function rzSet(patch){ for (var k in patch) ea.rz[k] = patch[k]; rzRender(); }
+function rzBtn(text, cls, fn){ var b = el('button',{type:'button','class':cls || 'secondary'}, text); b.addEventListener('click', fn); return b; }
+function rzLink(text, fn){ var b = el('button',{type:'button','class':'linkbtn'}, text); b.addEventListener('click', fn); return b; }
+function rzInput(id, label, type, val){
+  var w = el('div',{'class':'field'}); w.appendChild(el('label',{'for':id}, label));
+  var i = el('input',{type:type || 'text', id:id}); i.value = val || ''; w.appendChild(i); return w;
+}
+function rzRender(){
+  var box = $('ea-reuse'), rz = ea.rz; box.textContent = '';
+  $('ea-newfiles').hidden = !!rz.chosen;
+  if (rz.phase === 'hidden'){ box.hidden = true; postHeight(); return; }
+  box.hidden = false;
+  if (rz.msg) box.appendChild(el('div',{'class':'errbox',role:'alert'}, rz.msg));
+  if (rz.chosen){
+    box.appendChild(el('div',{'class':'okbox'}, fill(S.rzChosen, {n: rz.chosen.count, d: rzDate(rz.chosen.uploaded_at)})));
+    if (rz.chosen.names && rz.chosen.names.length) box.appendChild(el('p',{'class':'small'}, rz.chosen.names.join(', ')));
+    box.appendChild(rzBtn(S.rzChange, 'secondary', function(){ rzSet({chosen:null, phase:'offer', msg:''}); }));
+  } else if (rz.phase === 'offer'){
+    box.appendChild(el('h3',null,S.rzH)); box.appendChild(el('p',{'class':'small'}, S.rzP));
+    box.appendChild(rzBtn(S.rzUse, 'secondary', function(){ rzSet({phase:'options', msg:''}); }));
+  } else if (rz.phase === 'options'){
+    box.appendChild(el('h3',null,S.rzWhere));
+    rz.options.forEach(function(o, i){
+      var lab = el('label',{'class':'opt'}); var r = el('input',{type:'radio', name:'rz-opt', value:o.id});
+      if (rz.optId === o.id || (!rz.optId && rz.options.length === 1)) r.checked = true;
+      r.addEventListener('change', function(){ ea.rz.optId = o.id; });
+      lab.appendChild(r); var s = el('span'); s.appendChild(el('strong',null,o.masked)); s.appendChild(document.createTextNode(' \u2014 ' + o.label)); lab.appendChild(s); box.appendChild(lab);
+    });
+    var row = el('div',{'class':'row'});
+    row.appendChild(rzBtn(S.rzSend, 'primary', function(){
+      var chosen = document.querySelector('input[name="rz-opt"]:checked'); if (!chosen) return rzSet({msg:S.rzNeedPick});
+      ea.rz.optId = chosen.value; rzSendCode();
+    }));
+    row.appendChild(rzLink(S.rzNone, function(){ rzSet({phase:'help', msg:''}); }));
+    row.appendChild(rzLink(S.rzBack, function(){ rzSet({phase:'offer', msg:''}); }));
+    box.appendChild(row);
+  } else if (rz.phase === 'code'){
+    box.appendChild(el('p',null, fill(S.rzSent, {m: rz.masked})));
+    var w = rzInput('rz-code', S.rzCode, 'text'); w.querySelector('input').setAttribute('inputmode','numeric'); w.querySelector('input').setAttribute('autocomplete','one-time-code'); w.querySelector('input').maxLength = 6; box.appendChild(w);
+    var row2 = el('div',{'class':'row'});
+    row2.appendChild(rzBtn(S.rzVerify, 'primary', rzVerify));
+    row2.appendChild(rzLink(S.rzResend, rzSendCode));
+    row2.appendChild(rzLink(S.rzBack, function(){ rzSet({phase:'options', msg:''}); }));
+    box.appendChild(row2);
+  } else if (rz.phase === 'pick'){
+    box.appendChild(el('h3',null,S.rzPick));
+    rz.sets.forEach(function(u, i){
+      var lab = el('label',{'class':'opt'}); var r = el('input',{type:'radio', name:'rz-set', value:u.id}); if (i === 0) r.checked = true;
+      lab.appendChild(r); var s = el('span'); s.appendChild(el('strong',null, fill(S.rzSet, {n:u.count, d:rzDate(u.uploaded_at), x:rzDate(u.expires_on)})));
+      if (u.names && u.names.length) s.appendChild(el('div',{'class':'small'}, u.names.join(', ')));
+      lab.appendChild(s); box.appendChild(lab);
+    });
+    var row3 = el('div',{'class':'row'});
+    row3.appendChild(rzBtn(S.rzUseThese, 'primary', function(){
+      var id = (document.querySelector('input[name="rz-set"]:checked') || {}).value;
+      var u = ea.rz.sets.filter(function(x){ return x.id === id; })[0]; if (!u) return;
+      rzSet({chosen:u, msg:''}); eaClearErrs();
+    }));
+    row3.appendChild(rzLink(S.rzNew, function(){ rzSet({phase:'offer', msg:''}); }));
+    box.appendChild(row3);
+  } else if (rz.phase === 'help'){
+    box.appendChild(el('h3',null,S.rzHelpH)); box.appendChild(el('p',{'class':'small'}, S.rzHelpP));
+    box.appendChild(rzInput('rz-hname', S.rzName, 'text', ($('ea-first').value + ' ' + $('ea-last').value).trim()));
+    box.appendChild(rzInput('rz-hemail', S.rzEmail, 'email', $('ea-email').value.trim()));
+    box.appendChild(rzInput('rz-hphone', S.rzPhone, 'tel', $('ea-phone').value.trim()));
+    var mw = el('div',{'class':'field'}); mw.appendChild(el('label',{'for':'rz-hmsg'}, S.rzMsg)); mw.appendChild(el('textarea',{id:'rz-hmsg', rows:'2'})); box.appendChild(mw);
+    var row4 = el('div',{'class':'row'});
+    row4.appendChild(rzBtn(S.rzHelpSend, 'primary', rzHelp));
+    row4.appendChild(rzLink(S.rzBack, function(){ rzSet({phase:'options', msg:''}); }));
+    box.appendChild(row4);
+  } else if (rz.phase === 'helpsent'){
+    box.appendChild(el('div',{'class':'okbox'}, S.rzHelpDone));
+    box.appendChild(rzBtn(S.rzBack, 'secondary', function(){ rzSet({phase:'offer', msg:''}); }));
+  }
+  postHeight();
+}
+function rzSendCode(){
+  var rz = ea.rz; if (rz.busy) return; rz.busy = true;
+  postJSON('/bills/send-code', {building_id: rz.building, option: rz.optId}).then(function(r){
+    ea.rz.busy = false;
+    if (r.body && r.body.success){ rzSet({phase:'code', challenge:r.body.challenge, masked:r.body.masked, msg:''}); return; }
+    rzSet({msg: (r.body && r.body.error) || S.rzFail});
+  }).catch(function(){ ea.rz.busy = false; rzSet({msg:S.rzFail}); });
+}
+function rzVerify(){
+  var rz = ea.rz, code = ($('rz-code').value || '').replace(/\s+/g, '');
+  if (!/^\d{6}$/.test(code)) return rzSet({msg:S.rzNeedCode});
+  if (rz.busy) return; rz.busy = true;
+  postJSON('/bills/verify', {challenge: rz.challenge, code: code}).then(function(r){
+    ea.rz.busy = false;
+    if (r.body && r.body.success && r.body.uploads && r.body.uploads.length){ rzSet({phase:'pick', session:r.body.session, sets:r.body.uploads, msg:''}); return; }
+    if (r.body && r.body.success){ rzSet({phase:'offer', msg:S.rzFail}); return; }
+    rzSet({msg: (r.body && r.body.error) || S.rzFail, phase: (r.body && r.body.expired) ? 'options' : 'code'});
+  }).catch(function(){ ea.rz.busy = false; rzSet({msg:S.rzFail}); });
+}
+function rzHelp(){
+  var email = $('rz-hemail').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return rzSet({msg:S.rzNeedEmail});
+  var body = {building_id: ea.rz.building, name: $('rz-hname').value.trim(), email: email, phone: $('rz-hphone').value.trim(), message: $('rz-hmsg').value.trim()};
+  postJSON('/bills/request-help', body).then(function(r){
+    if (r.body && r.body.success) rzSet({phase:'helpsent', msg:''}); else rzSet({msg: (r.body && r.body.error) || S.rzFail});
+  }).catch(function(){ rzSet({msg:S.rzFail}); });
+}
 
 function eaClearErrs(){
   ['ea-use-err','ea-sq1-err','ea-sq2-err','ea-roof-err','ea-budget-err','ea-sgm-err','ea-files-err','ea-sqft-err','ea-mtype-err','ea-maddr-err','ea-first-err','ea-last-err','ea-email-err','ea-consent-err'].forEach(function(i){ setText(i,''); });
@@ -1107,7 +1245,7 @@ function prefillRight(){
 
 function eaValidate(){
   var out = [];
-  if (!ea.files.length) out.push({id:'ea-files', message:S.eaNoFiles});
+  if (!ea.files.length && !ea.rz.chosen) out.push({id:'ea-files', message:S.eaNoFiles});
   if (!state.bills.desk && !state.bills.solar) out.push({id:'ea-use', message:S.eaNeedChoice});
   var sq = parseNum($('ea-sqft').value);
   if (sq == null || isNaN(sq) || sq <= 0 || sq > 5000000) out.push({id:'ea-sqft', message:'Enter the total square feet as a number.'});
@@ -1220,10 +1358,13 @@ function eaSolarBody(files){
 
 function eaFinish(failed){
   var up = ea.up;
-  if (!up.want.desk){ up.failed = failed; eaDone(); return Promise.resolve(); }   // Solar only: bills are filed, no Desk Audit requested
+  // Solar only on an older middleware: bills are filed, no Desk Audit requested. With bill sets (8.2.0) the set is completed
+  // so it can be reused, and want_desk:false keeps it out of the Desk Audit queue.
+  if (!up.want.desk && !up.billSets){ up.failed = failed; eaDone(); return Promise.resolve(); }
   setText('ea-prog-text', S.eaFinishing); eaShow('progress');
-  return postJSON('/screening-complete', {building_id: up.buildingId, submission_id: up.sid, token: up.token,
-      failed: failed.map(function(f){ return f.name; })})
+  var done = {building_id: up.buildingId, submission_id: up.sid, token: up.token, failed: failed.map(function(f){ return f.name; })};
+  if (up.billSets){ done.want_desk = !!up.want.desk; done.want_solar = !!up.want.solar; }
+  return postJSON('/screening-complete', done)
     .then(function(r){
       if (!(r.body && r.body.success)) throw new Error('complete');
       up.failed = failed; eaDone();
@@ -1232,7 +1373,7 @@ function eaFinish(failed){
 function eaDone(){
   var up = ea.up, n = up.failed.length;
   remStore('ea');
-  setText('ea-done-msg', n ? fill(S.eaDonePartial, {n: n}) : S.eaDone);
+  setText('ea-done-msg', n ? fill(S.eaDonePartial, {n: n}) : (up.reused ? S.eaDoneReuse : S.eaDone));
   $('ea-done-msg').className = n ? 'errbox' : 'okbox';
   var box = $('ea-failed'); box.hidden = !n; var ul = $('ea-failed-list'); ul.textContent = '';
   up.failed.forEach(function(f){ var li = el('li'); li.appendChild(el('span',{'class':'nm'}, f.name)); ul.appendChild(li); });
@@ -1249,7 +1390,7 @@ $('ea-submit').addEventListener('click', function(){
   var b = state.building, acc = state.account, files = ea.files.slice();
   var fuel = $('hfuel').value;
   var body = {
-    sf_account_id: acc.id, upload_mode: 'separate',
+    sf_account_id: acc.id, upload_mode: 'separate', want: {desk: !!state.bills.desk, solar: !!state.bills.solar},
     contact: {first_name: $('ea-first').value.trim(), last_name: $('ea-last').value.trim(),
               email: $('ea-email').value.trim(), phone: $('ea-phone').value.trim(), role: $('ea-role').value.trim()},
     buildings: [{
@@ -1266,19 +1407,30 @@ $('ea-submit').addEventListener('click', function(){
       bill_files: files.map(function(f){ return {name: f.name, type: f.type || '', size: f.size}; })
     }]
   };
+  var chosen = ea.rz.chosen;
+  if (chosen) body.reuse = {session: ea.rz.session, bill_upload_id: chosen.id};
   ea.busy = true; $('ea-submit').disabled = true;
   var want = {desk: !!state.bills.desk, solar: !!state.bills.solar};
   setText('ea-prog-text', S.eaSaving); eaProgList([], $('ea-prog-files')); eaShow('progress');
   var first = Promise.resolve();
   if (want.solar){
     // Solar answers first; the bills then travel one at a time through the screening upload (same as the Desk Audit)
-    first = postJSON('/submit', eaSolarBody(files)).then(function(r){ if (!(r.body && r.body.success)) throw new Error('solar'); });
+    first = postJSON('/submit', eaSolarBody(chosen ? (chosen.names || []).map(function(n){ return {name:n}; }) : files)).then(function(r){ if (!(r.body && r.body.success)) throw new Error('solar'); });
   }
   first.then(function(){ return postJSON('/screening-request', body); }).then(function(r){
+    if (chosen && r.body && r.body.success && r.body.reused){
+      ea.up = {buildingId: b.id, sid: r.body.submissionId, files: [], failed: [], want: want, reused: true};
+      return eaDone();
+    }
+    if (chosen && r.status !== 200){     // the verification ended or the set is gone: go back to the choice, say why
+      var why = (r.body && (r.body.errors && r.body.errors.join(' ') || r.body.error)) || S.eaFail;
+      if (r.body && r.body.verifyAgain) ea.rz.phase = 'offer'; ea.rz.chosen = null; rzRender();
+      return eaFail(why);
+    }
     if (r.status === 400 && r.body && r.body.errors){ return eaFail(r.body.errors.join(' ')); }
     if (!(r.body && r.body.success && r.body.records && r.body.records[0] && r.body.records[0].uploadToken)) return eaFail(S.eaFail);
     var rec = r.body.records[0];
-    ea.up = {buildingId: rec.buildingId, sid: r.body.submissionId, token: rec.uploadToken, files: files, failed: [], expired: false, want: want};
+    ea.up = {buildingId: rec.buildingId, sid: r.body.submissionId, token: rec.uploadToken, files: files, failed: [], expired: false, want: want, billSets: !!r.body.billSets};
     return eaUploadAll(files).then(function(failed){
       if (ea.up.expired) return eaFail(S.eaLinkExpired);
       return eaFinish(failed);
@@ -1298,6 +1450,7 @@ $('ea-another').addEventListener('click', startAnother);
 
 function resetRight(){
   ea.files = []; ea.up = null; ea.busy = false; $('ea-submit').disabled = false;
+  ea.rzTok++; ea.rz = rzFresh(); rzRender();
   eaRender(); eaClearErrs();
   ['ea-sqft','ea-first','ea-last','ea-email','ea-phone','ea-maddr'].forEach(function(i){ $(i).value = ''; });
   $('ea-mtype').value = ''; $('ea-consent').checked = false; $('ea-role').value = '';
@@ -1308,6 +1461,7 @@ function resetRight(){
   $('ea-manual').hidden = !man;
   if (man){ $('ea-maddr').value = state.building.address || ''; }
   eaShow('form');
+  rzProbe();
 }
 
 
@@ -1366,6 +1520,7 @@ function updateFlows(){
   var man = !!(state.building && state.building.manual && state.offer === 'instant');
   $('ia-manual-note').hidden = !man; if (man) setText('ia-manual-note', S.iaManual);
   $('ea-panel').hidden = state.offer !== 'bills';
+  if (typeof ea === 'object' && ea && ea.rz) rzProbe();
   postHeight();
 }
 // desk -> instant: carry over what the client already typed (never overwrites left-hand entries)
