@@ -189,6 +189,8 @@
     </div>
   </section>
 
+  <p class="small" id="pick-offer-note" role="status" aria-live="polite" hidden></p>
+
   <!-- STEP 3: the chosen flow -->
   <div id="step2" hidden>
     <!-- LEFT: Instant audit -->
@@ -463,6 +465,7 @@ var S = {
   eaUseH: 'Use these bills for', eaDeskL: 'Desk Audit: we read your bills and show where the strongest opportunities may be',
   eaSolarL: 'Solar Assessment: we look at whether solar could work for your roof or grounds', eaRole: 'Title / role (optional)',
   offersHint: 'Choose Desk Audit, Solar Assessment, or both. The same bills are used for each.',
+  pickOffer: 'Thank you. Now choose what you would like above: Instant Audit, Desk Audit, Solar Assessment, or both Desk Audit and Solar Assessment.',
   eaTitle: 'Desk Audit', eaSub: 'Upload your utility bills and we will take a closer look.',
   eaDrop: 'Drop your bills here, or click to choose files', eaNote: 'PDF, JPG or PNG. Up to 36 files, 25 MB each. Filed to your institution\'s record.',
   eaChoose: 'What would you like?', eaDesk: 'Desk audit', eaSolar: 'Solar assessment (questions coming next)', eaProc: 'Procurement (coming soon)',
@@ -663,13 +666,14 @@ function pickBuilding(b){
   resetRight();
   remApply();
   postHeight();
+  if (!state.offer) scrollParentTo($('offers'));
   $('sqft').focus();
 }
 
 $('step1-change').addEventListener('click', function(){
   state.building = null; state.account = null;
   $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
-  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true;
+  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('pick-offer-note').hidden = true;
   postHeight();
 });
 $('county-use').addEventListener('change', function(){
@@ -1516,6 +1520,8 @@ $('ea-solar').addEventListener('change', function(){ state.bills.solar = this.ch
 function updateFlows(){
   var show = !!(state.offer && state.building);
   $('step2').hidden = !show;
+  var askOffer = !!(state.building && !state.offer);
+  $('pick-offer-note').hidden = !askOffer; if (askOffer) setText('pick-offer-note', S.pickOffer);
   $('ia-panel').hidden = state.offer !== 'instant';
   var man = !!(state.building && state.building.manual && state.offer === 'instant');
   $('ia-manual-note').hidden = !man; if (man) setText('ia-manual-note', S.iaManual);
