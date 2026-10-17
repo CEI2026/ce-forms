@@ -472,6 +472,9 @@ var S = {
   eaAbout: 'About this building and you', eaSqft: 'Total square feet', eaMtype: 'Building type', eaMaddr: 'Full street address',
   eaFirst: 'First name', eaLast: 'Last name', eaEmail: 'Email', eaPhone: 'Phone (optional)',
   eaConsent: 'I agree that Catholic Energies may store these bills and figures and use them to follow up with me about my building.',
+  // Key of the consent sentence above. The middleware (lib/bills.js, CONSENT_TEXTS) holds the wording for each key and
+  // stores it with the upload. If you change the sentence above, add a new key there and change this one - never edit an old key.
+  eaConsentKey: 'ea-2026-10-16',
   eaSubmit: 'Submit for assessment', eaSubmitNote: 'We\'ll get back to you soon with the results.',
   eaCount: '{n} of 36 files, {mb} MB', eaRemove: 'Remove',
   eaSaving: 'Saving your information', eaUploading: 'Uploading bill {i} of {n}', eaFinishing: 'Finishing up',
@@ -1395,6 +1398,7 @@ $('ea-submit').addEventListener('click', function(){
   var fuel = $('hfuel').value;
   var body = {
     sf_account_id: acc.id, upload_mode: 'separate', want: {desk: !!state.bills.desk, solar: !!state.bills.solar},
+    consent_version: S.eaConsentKey,
     contact: {first_name: $('ea-first').value.trim(), last_name: $('ea-last').value.trim(),
               email: $('ea-email').value.trim(), phone: $('ea-phone').value.trim(), role: $('ea-role').value.trim()},
     buildings: [{
