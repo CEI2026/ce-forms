@@ -427,7 +427,7 @@ var SHOW_LIGHT_WORD = false;   // Ian has not decided; the chip shows the headli
 /* ------------------------------------------------------------------ strings (UI-owned words) */
 var S = {
   eyebrow: 'Energy Assessment Resource Center', title: 'Get Your Free Energy Assessment',
-  lede: 'Choose where to start. We walk with you at your own pace: no pressure, and no cost to Catholic organizations.',
+  lede: 'Choose where to start. We walk with you at your own pace: no pressure, and no cost to your institution.',
   step1: 'Find your institution and building', offersT: 'Choose where to start',
   remember: 'Remember my name and contact details on this device, so I do not have to retype them.',
   iaManual: 'Instant Audit works with a building that is already on file. To add a new building, choose Desk Audit or Solar Assessment above: they add it for our team to review.',
@@ -466,7 +466,7 @@ var S = {
   eaSolarL: 'Solar Assessment: we look at whether solar could work for your roof or grounds', eaRole: 'Title / role (optional)',
   offersHint: 'Choose Desk Audit, Solar Assessment, or both. The same bills are used for each.',
   pickOffer: 'Thank you. Now choose what you would like above: Instant Audit, Desk Audit, Solar Assessment, or both Desk Audit and Solar Assessment.',
-  eaTitle: 'Desk Audit', eaSub: 'Upload your utility bills and we will take a closer look.',
+  eaTitle: 'Desk Audit', eaSub: 'Upload your utility bills (gas and electric) and we will take a closer look.',
   eaDrop: 'Drop your bills here, or click to choose files', eaNote: 'PDF, JPG or PNG. Up to 36 files, 25 MB each. Filed to your institution\'s record.',
   eaChoose: 'What would you like?', eaDesk: 'Desk audit', eaSolar: 'Solar assessment (questions coming next)', eaProc: 'Procurement (coming soon)',
   eaAbout: 'About this building and you', eaSqft: 'Total square feet', eaMtype: 'Building type', eaMaddr: 'Full street address',
@@ -1476,7 +1476,7 @@ function resetRight(){
 /* ------------------------------------------------------------------ offerings (the choices this page is about) */
 var BOOK_URL = 'https://www.catholicenergies.org/get-started';
 var OFFERS = [
-  {id:'instant', label:'No bills needed', title:'Instant Audit', text:'Enter your numbers and get a first look in about two minutes.', live:true},
+  {id:'instant', label:'No uploads needed', title:'Instant Audit', text:'Enter your numbers and get a first look in about two minutes.', live:true},
   {id:'desk', label:'Upload your bills', title:'Desk Audit', text:'We read your utility bills and show where the strongest opportunities may be.', live:true},
   {id:'solar', label:'Upload your bills', title:'Solar Assessment', text:'See whether solar could work for your roof or grounds.', live:true},
   {id:'proc', label:'Clean energy', title:'Procurement', text:'Find incentives and options for buying cleaner energy.', live:false, badge:'Coming soon'}
