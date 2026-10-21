@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Energy Assessment Resource Center</title>
 <!--
-  Energy Assessment Resource Center v0.4, 2026-10-07: brand styling (playbook Apr 2026), offering cards, entry-mode switch, one-screen flow, Solar Assessment questions, handshake matching the other CE forms.
+  Energy Assessment Resource Center v0.5.0, 2026-10-21: building first, then the services (Desk Audit with Instant / Full
+  inside it, Solar Assessment, Procurement not yet available), then the bills step (earlier bills can be reused after an
+  emailed code), then the existing form for the chosen path. Everything the page calls on the middleware is unchanged.
+  v0.4, 2026-10-07: brand styling (playbook Apr 2026), entry-mode switch, one-screen flow, Solar Assessment questions.
   Spec: UI_and_Middleware_Build_Spec.md. This page never scores and never writes its own result
   words: it shows exactly what ce-web-to-sf-middleware returns (rule 1 and rule 5 of the spec).
   Static, no build step. Netlify: publish directory = resource-center.
@@ -38,21 +41,6 @@
   .sec-title{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px}
   .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;font-size:.8rem;
     font-weight:800;align-items:center;justify-content:center;letter-spacing:0}
-  /* offering cards */
-  .offers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
-  @media (max-width:960px){.offers{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media (max-width:520px){.offers{grid-template-columns:1fr}}
-  .offer{position:relative;text-align:left;background:#fff;border:2px solid var(--line);border-radius:16px;padding:18px 16px 16px;
-    font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:190px;overflow:hidden}
-  .offer:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--grad)}
-  .offer:hover:not([disabled]){border-color:var(--orange)}
-  .offer[aria-pressed=true]{border-color:var(--red);background:#fff8f0;box-shadow:0 0 0 3px rgba(194,79,42,.18)}
-  .offer .lab{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-top:4px}
-  .offer .ttl{font-size:1.05rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1.25}
-  .offer .txt{font-size:.9rem;color:var(--muted);flex:1}
-  .offer .go{font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
-  .offer[disabled]{cursor:not-allowed;opacity:.62;background:#faf6f0}
-  .offer[disabled] .go{color:var(--muted)}
   /* steps and panels */
   .step{background:var(--panel);border-radius:16px;padding:16px 18px;margin-bottom:22px}
   .step-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
@@ -141,6 +129,56 @@
   fieldset.bad{outline:2px solid var(--err);outline-offset:4px;border-radius:8px}
   textarea{padding:10px 12px}
   [hidden]{display:none!important}
+
+  /* v0.5: service cards (step 2) */
+  .cards{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin:10px 0 4px}
+  .card{flex:1 1 280px;display:flex;flex-direction:column;gap:10px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:16px 16px 18px}
+  .card.sel{background:var(--panel);border:3px solid var(--red);padding:15px 15px 17px}
+  .card.off{background:#f3eee6;border:2px dashed #b9a483;color:var(--muted)}
+  .card .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .card.sel .hd{color:var(--red)}
+  .card .hd input{width:24px;height:24px;margin:0;accent-color:var(--red)}
+  .card .ttl{font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1.2;cursor:pointer}
+  .card.off .ttl{cursor:default}
+  .card .txt{font-size:.92rem;color:var(--muted)}
+  .card.off .txt{color:var(--muted)}
+  .radios{display:flex;flex-direction:column;gap:6px;border:0;padding:0;margin:0}
+  .radio{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);border-radius:12px;padding:9px 12px;font-weight:800;font-size:.95rem;cursor:pointer;color:var(--ink)}
+  .radio input{width:20px;height:20px;margin:0;accent-color:var(--red)}
+  .radio.on{border:3px solid var(--red);padding:8px 11px}
+  .radio.dis{border:2px dashed #b9a483;background:#f3eee6;color:var(--muted);cursor:not-allowed}
+  .detail{flex:1;display:flex;flex-direction:column;gap:8px;background:#faf6f0;border:2px solid var(--line);border-radius:12px;padding:14px 14px 16px;font-size:.9rem}
+  .card.sel .detail{background:#fff}
+  .detail .dt{font-weight:800;font-size:.98rem}
+  .detail p{margin:0;color:var(--ink)}
+  .detail .why{font-weight:700;color:var(--link);font-size:.85rem}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 9px;border-radius:999px;background:var(--neutral-bg);color:var(--neutral-ink)}
+  .tag.ok{background:var(--ok-bg);color:var(--ok-ink)} .tag.warm{background:#fbe3cf;color:#7e3518}
+  .pill{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:999px;background:var(--panel);color:#7e3518;margin-left:4px}
+  /* locked steps strip and step 3 boxes */
+  .lockstrip{border:2px dashed #d9cbb6;border-radius:14px;padding:12px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;margin-bottom:22px;color:var(--muted)}
+  .lockstrip .num{background:#d9cbb6;color:var(--ink)}
+  .lockstrip .t{font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:.8rem}
+  .s3box{background:#fff;border:2px solid var(--line);border-left:10px solid var(--gold);border-radius:14px;padding:14px 18px;margin:8px 0 0}
+  .s3box.ok{border-left-color:#4e9a63}
+  .s3box p{margin:0 0 8px}
+  .s3box .buttons{margin-top:8px}
+  /* the offer overview (landing-page content) */
+  .offer-grid{display:flex;flex-wrap:wrap;gap:28px;margin:12px 0 26px}
+  .ocol{flex:1 1 260px;display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--orange);padding:16px 2px 4px}
+  .ocol.off{border-top-color:#d9cbb6}
+  .ocol .ico{width:46px;height:46px;border-radius:50%;background:var(--panel);display:flex;align-items:center;justify-content:center}
+  .ocol .ico svg{width:24px;height:24px;stroke:var(--red);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ocol h3{margin:0;font-size:1.05rem;letter-spacing:.04em}
+  .ocol.off h3{color:var(--muted)}
+  .ocol .promise{font-weight:600;font-size:.98rem}
+  .ocol.off .promise{color:var(--muted)}
+  .ocol .k{font-size:.68rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-top:4px}
+  .ocol .v{font-size:.88rem;color:var(--ink)}
+  .ocol.off .v{color:var(--muted)}
+  .offer-head h2{text-transform:none;letter-spacing:0;font-size:1.5rem;margin-bottom:6px}
+  .step-head .num{flex:none}
 </style>
 </head>
 <body>
@@ -152,20 +190,16 @@
     <svg class="wave" viewBox="0 0 600 36" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="wg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#F89A1E"/><stop offset="1" stop-color="#DC6F2A"/></linearGradient></defs><path d="M0 20 C 30 20, 40 17, 70 17 S 110 24, 140 24 S 190 10, 230 10 S 290 30, 330 30 S 400 5, 450 5 S 530 33, 600 18" fill="none" stroke="url(#wg)" stroke-width="3" stroke-linecap="round"/></svg>
   </header>
 
-  <!-- STEP 1: choose an offering -->
-  <h2 class="sec-title" id="s-offers-title" style="font-size:.85rem"><span class="num">1</span><span id="s-offers-t"></span></h2>
-  <div class="offers" id="offers" role="group" aria-labelledby="s-offers-t"></div>
-  <p class="small" id="s-offers-hint" style="margin:-12px 0 20px"></p>
-
-  <!-- STEP 2: institution and building -->
+  <!-- STEP 1: institution and building -->
   <section class="step" id="step1" aria-labelledby="step1-title">
     <div class="step-head">
-      <span class="num">2</span>
+      <span class="num">1</span>
       <span class="title" id="step1-title"></span>
       <span class="sel" id="step1-sel"></span>
       <button class="linkbtn" id="step1-change" hidden></button>
     </div>
     <div id="step1-body">
+      <p class="small" id="s-step1-intro" style="margin:8px 0 0"></p>
       <div id="lk-zip">
         <div class="row2" style="margin-top:10px;align-items:end">
           <div>
@@ -189,11 +223,89 @@
     </div>
   </section>
 
-  <p class="small" id="pick-offer-note" role="status" aria-live="polite" hidden></p>
 
-  <!-- STEP 3: the chosen flow -->
-  <div id="step2" hidden>
-    <!-- LEFT: Instant audit -->
+  <!-- Until a building is chosen: the later steps, closed -->
+  <div class="lockstrip" id="lockstrip" aria-hidden="true">
+    <span class="num">2</span><span class="t" id="s-lock2"></span>
+    <span class="num">3</span><span class="t" id="s-lock3"></span>
+    <span class="small" id="s-lock-note"></span>
+  </div>
+
+  <!-- STEP 2: what would you like -->
+  <section id="step2" aria-labelledby="step2-title" hidden style="margin-bottom:22px">
+    <h2 class="sec-title" style="font-size:.85rem"><span class="num">2</span><span id="step2-title"></span><span class="pill" id="s-tick"></span></h2>
+    <div class="cards">
+
+      <div class="card" id="card-desk">
+        <div class="hd"><span id="desk-hd"></span><input type="checkbox" id="cb-desk" aria-labelledby="desk-ttl"></div>
+        <label class="ttl" id="desk-ttl" for="cb-desk"></label>
+        <div class="txt" id="desk-txt"></div>
+        <fieldset class="radios" id="how">
+          <legend class="hp" id="s-how-legend"></legend>
+          <label class="radio" id="r-instant"><input type="radio" name="how" value="instant"><span id="s-r-instant"></span></label>
+          <label class="radio" id="r-full"><input type="radio" name="how" value="full"><span id="s-r-full"></span></label>
+        </fieldset>
+        <div class="detail" aria-live="polite">
+          <div id="d-instant">
+            <div class="chips"><span class="tag ok" id="s-ia-tag1"></span><span class="tag" id="s-ia-tag2"></span></div>
+            <div class="dt" id="s-ia-dt"></div>
+            <p id="s-ia-p1"></p><p id="s-ia-p2"></p><p class="small" id="s-ia-p3"></p>
+          </div>
+          <div id="d-full" hidden>
+            <div class="chips"><span class="tag warm" id="s-fd-tag1"></span><span class="tag warm" id="s-fd-tag2"></span></div>
+            <div class="dt" id="s-fd-dt"></div>
+            <p id="s-fd-p1"></p><p id="s-fd-p2"></p>
+          </div>
+          <div class="why" id="desk-why" hidden></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-solar">
+        <div class="hd"><span id="solar-hd"></span><input type="checkbox" id="cb-solar" aria-labelledby="solar-ttl"></div>
+        <label class="ttl" id="solar-ttl" for="cb-solar"></label>
+        <div class="txt" id="solar-txt"></div>
+        <div class="detail">
+          <div class="chips"><span class="tag warm" id="s-so-tag1"></span><span class="tag warm" id="s-so-tag2"></span></div>
+          <div class="dt" id="s-so-dt1"></div><p id="s-so-p1"></p>
+          <div class="dt" id="s-so-dt2"></div><p id="s-so-p2"></p>
+          <p class="small" id="s-so-p3"></p>
+        </div>
+      </div>
+
+      <div class="card off" id="card-proc" aria-disabled="true">
+        <div class="hd"><span id="proc-hd"></span><input type="checkbox" disabled aria-labelledby="proc-ttl"></div>
+        <div class="ttl" id="proc-ttl"></div>
+        <div class="txt" id="proc-txt"></div>
+        <div class="detail">
+          <div class="chips"><span class="tag" id="s-pr-tag1"></span><span class="tag" id="s-pr-tag2"></span></div>
+          <div class="dt" id="s-pr-dt1"></div><p id="s-pr-p1"></p>
+          <div class="dt" id="s-pr-dt2"></div><p id="s-pr-p2"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: your bills -->
+  <section class="step" id="step3" aria-labelledby="step3-title" hidden>
+    <div class="step-head"><span class="num">3</span><span class="title" id="step3-title"></span></div>
+    <div id="s3-none" class="small" style="margin-top:8px"></div>
+    <div id="s3-instant" class="s3box ok" hidden>
+      <p id="s3-ia-text"></p>
+      <div class="buttons"><button class="secondary" id="go-instant" type="button"></button></div>
+    </div>
+    <div id="s3-bills" hidden>
+      <div class="reuse" id="ea-reuse" hidden aria-live="polite" style="margin-top:10px"></div>
+      <div class="s3box">
+        <p id="s3-ea-text"></p>
+        <div class="buttons"><button class="secondary" id="go-bills" type="button"></button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4: the existing form for the chosen path -->
+  <div id="step4" hidden>
+    <h2 class="sec-title" style="font-size:.85rem"><span class="num">4</span><span id="step4-title"></span></h2>
+    <!-- Instant audit -->
     <section class="panel" id="ia-panel" aria-labelledby="ia-title">
       <h2 id="ia-title"></h2>
       <p class="small" id="ia-sub"></p>
@@ -302,13 +414,12 @@
       <div id="results" class="results" aria-live="polite" hidden></div>
     </section>
 
-    <!-- RIGHT: Energy assessments (bill upload -> Desk audit) -->
+    <!-- Bill upload: Full Desk Audit and/or Solar Assessment -->
     <section class="panel" id="ea-panel" aria-labelledby="ea-title" tabindex="-1">
       <h2 id="ea-title"></h2>
       <p class="small" id="ea-sub"></p>
 
       <div id="ea-form">
-        <div class="reuse" id="ea-reuse" hidden aria-live="polite"></div>
         <div id="ea-newfiles">
         <div class="drop" id="ea-drop" tabindex="0" role="button" aria-describedby="ea-drop-note">
           <div id="ea-drop-t"></div>
@@ -320,8 +431,8 @@
         <div class="ferr" id="ea-files-err"></div>
         </div>
 
-        <h3 id="ea-use-h"></h3>
-        <div id="ea-use" tabindex="-1">
+        <h3 id="ea-use-h" hidden></h3>
+        <div id="ea-use" tabindex="-1" hidden>
           <label class="check"><input type="checkbox" id="ea-desk"><span id="ea-desk-l"></span></label>
           <label class="check"><input type="checkbox" id="ea-solar"><span id="ea-solar-l"></span></label>
         </div>
@@ -415,7 +526,16 @@
         <div class="buttons"><a class="btn-link" id="ea-book" target="_top" rel="noopener"></a><button class="secondary" id="ea-another" type="button"></button></div>
       </div>
     </section>
-  </div>
+    </div>
+
+  <!-- What you can get here: shown from the start, stays on the page -->
+  <section id="offer" aria-labelledby="offer-title" class="offer-head">
+    <p class="eyebrow" id="s-offer-eyebrow"></p>
+    <h2 id="offer-title"></h2>
+    <p class="lede" id="s-offer-lede"></p>
+    <div class="offer-grid" id="offer-grid"></div>
+  </section>
+
 </div>
 
 <script>
@@ -427,13 +547,43 @@ var SHOW_LIGHT_WORD = false;   // Ian has not decided; the chip shows the headli
 /* ------------------------------------------------------------------ strings (UI-owned words) */
 var S = {
   eyebrow: 'Energy Assessment Resource Center', title: 'Get Your Free Energy Assessment',
-  lede: 'Choose where to start. We walk with you at your own pace: no pressure, and no cost to your institution.',
-  step1: 'Find your institution and building', offersT: 'Choose where to start',
+  lede: 'Start by finding your building, then tell us what you would like. We walk with you at your own pace: no pressure, and no cost to your institution.',
+  step1: 'Find your institution and building',
+  step1Intro: 'Enter the ZIP code of your parish, school or institution. We will list the buildings we have for it, and you pick the one this is for. Everything that follows applies to that building.',
+  lock2: 'What would you like?', lock3: 'Your bills', lockNote: 'These open once you have chosen your building.',
+  step2: 'What would you like?', tick: 'Tick one or more', step3: 'Your bills', step4: 'About the building and you',
+  hdSel: 'Selected', hdAdd: 'Tick to add', hdOff: 'Not yet available',
+  deskT: 'Desk Audit', deskX: 'Show where the strongest opportunities may be. Choose how:', howLegend: 'How would you like your Desk Audit?',
+  rInstant: 'Instant Audit', rFull: 'Full Desk Audit',
+  iaTag1: 'No uploads required', iaTag2: 'Not available with Solar', iaDt: 'Instant Audit',
+  iaP1: 'An automated first look in about two minutes. You type in the monthly usage and cost from your utility bills, so keep them handy.',
+  iaP2: 'No staff review. The result is generated from the numbers you enter.',
+  iaP3: 'Want staff to review it, or a solar assessment too? Choose Full Desk Audit.',
+  fdTag1: 'Bill uploads required', fdTag2: 'Staff reviewed', fdDt: 'Full Desk Audit',
+  fdP1: 'You upload your utility bill PDFs, or reuse bills we already have for this building. We read every bill and our staff review the result.',
+  fdP2: 'Takes longer than the Instant Audit. The same bills serve the Solar Assessment.',
+  whySolar: 'Instant Audit is not available with Solar: Solar needs your bill PDFs.',
+  whyManual: 'Instant Audit needs a building that is already on file. Full Desk Audit adds this building for our team.',
+  solarT: 'Solar Assessment', solarX: 'See whether solar could work for your roof or grounds.',
+  soTag1: 'Bill uploads required', soTag2: 'Staff prepared', soDt1: 'What you get', soP1: 'A first-pass view of whether solar fits this building, and what to look at next.',
+  soDt2: 'What we need', soP2: 'Your bill PDFs, plus a few quick questions about the roof or grounds on the next step.',
+  soP3: 'Uses the same bills as a Full Desk Audit. Upload once.',
+  procT: 'Clean Energy Procurement', procX: 'Find incentives and options for buying cleaner energy.',
+  prTag1: 'Not yet available', prTag2: 'Bill uploads required', prDt1: 'What you will get', prP1: 'A short list of supply options and incentives that fit your building and your utility.',
+  prDt2: 'What we will need', prP2: 'Your bill PDFs. Bills you upload today will work for this when it opens.',
+  s3None: 'Tick what you would like above, and we will say what we need from you.',
+  s3Instant: 'Nothing to upload for the Instant Audit. On the next step you type in the monthly usage and cost from your bills, and you get an automated result.',
+  goInstant: 'Start Instant Audit',
+  s3Bills: 'Add your most recent 12 months of utility bills as PDFs on the next step. Upload once: everything you ticked uses the same files.',
+  s3BillsChosen: 'You are using bills we already have. Nothing to upload: the next step asks about the building and you.',
+  goBills: 'Continue', goBillsNew: 'Continue: add your bills',
+  offerEyebrow: 'What you can get here', offerTitle: 'Three ways to see your building more clearly',
+  offerLede: 'All free, all built around the utility bills you already receive. Once we have found your building, you choose one or more of these.',
   remember: 'Remember my name and contact details on this device, so I do not have to retype them.',
-  iaManual: 'Instant Audit works with a building that is already on file. To add a new building, choose Desk Audit or Solar Assessment above: they add it for our team to review.',
+  iaManual: 'Instant Audit works with a building that is already on file. Choose Full Desk Audit above: it adds this building for our team to review.',
   modeLab: 'Month by month gives the most accurate result. No monthly figures handy? Annual totals will do.',
   modeAnnual: 'Annual totals', modeMonthly: 'Month by month', moreAccurate: 'Make this more accurate: enter month by month',
-  bookCall: 'Book a call', nextLookup: 'Next, find your institution and building below.',
+  bookCall: 'Book a call',
   zip: 'ZIP code of the institution', zipGo: 'Find my institution',
   change: 'Change', addBuilding: 'My building is not listed',
   searching: 'Searching...', noAccounts: 'We did not find an institution for that ZIP code. Check the ZIP code and try again.',
@@ -441,7 +591,7 @@ var S = {
   noBuildings: 'No buildings are on file for this institution yet. Add yours below.',
   manualTitle: 'Add your building', mName: 'Building name', mAddr: 'Street address',
   useManual: 'Use this building', lookupFail: 'We could not reach the lookup. Try again in a moment.',
-  iaTitle: 'Instant audit', iaSub: 'No bills handy? Enter your numbers and get a first look in seconds.',
+  iaTitle: 'Instant Audit', iaSub: 'Type in the monthly usage and cost from your bills. Nothing to upload. The result is automated, with no staff review.',
   sqft: 'Total square feet', sqftCounty: 'County record: {n} sq ft (reference only)', useCounty: 'Use the county figure',
   btype: 'Building type', hfuel: 'Heating fuel', reasons: 'Reasons to look (optional)',
   shared: 'Shared meters note (optional)', startMonth: 'First of the 12 months',
@@ -461,14 +611,11 @@ var S = {
   busy: 'Too many requests from this connection. Try again in a few minutes.',
   reportBtn: 'Download report', reportPrep: 'Preparing your report', checkBills: 'Check it with your bills',
   another: 'Start another building', perYear: '{n} a year',
-  eaTitleDesk: 'Desk Audit', eaTitleSolar: 'Solar Assessment', eaTitleBoth: 'Desk Audit and Solar Assessment', eaTitleNone: 'Upload your bills',
+  eaTitleDesk: 'Full Desk Audit', eaTitleSolar: 'Solar Assessment', eaTitleBoth: 'Full Desk Audit and Solar Assessment', eaTitleNone: 'Upload your bills',
   eaUseH: 'Use these bills for', eaDeskL: 'Desk Audit: we read your bills and show where the strongest opportunities may be',
   eaSolarL: 'Solar Assessment: we look at whether solar could work for your roof or grounds', eaRole: 'Title / role (optional)',
-  offersHint: 'Choose Desk Audit, Solar Assessment, or both. The same bills are used for each.',
-  pickOffer: 'Thank you. Now choose what you would like above: Instant Audit, Desk Audit, Solar Assessment, or both Desk Audit and Solar Assessment.',
-  eaTitle: 'Desk Audit', eaSub: 'Upload your utility bills (gas and electric) and we will take a closer look.',
+  eaTitle: 'Full Desk Audit', eaSub: 'Upload your utility bills (gas and electric) and we will take a closer look.',
   eaDrop: 'Drop your bills here, or click to choose files', eaNote: 'PDF, JPG or PNG. Up to 36 files, 25 MB each. Filed to your institution\'s record.',
-  eaChoose: 'What would you like?', eaDesk: 'Desk audit', eaSolar: 'Solar assessment (questions coming next)', eaProc: 'Procurement (coming soon)',
   eaAbout: 'About this building and you', eaSqft: 'Total square feet', eaMtype: 'Building type', eaMaddr: 'Full street address',
   eaFirst: 'First name', eaLast: 'Last name', eaEmail: 'Email', eaPhone: 'Phone (optional)',
   eaConsent: 'I agree that Catholic Energies may store these bills and figures and use them to follow up with me about my building.',
@@ -554,7 +701,18 @@ function scrollParentTo(node){
 function setText(id, t){ $(id).textContent = t; }
 (function initText(){
   document.title = S.title;
-  setText('s-eyebrow', S.eyebrow); setText('s-title', S.title); setText('s-lede', S.lede); setText('s-offers-t', S.offersT);
+  setText('s-eyebrow', S.eyebrow); setText('s-title', S.title); setText('s-lede', S.lede);
+  setText('s-step1-intro', S.step1Intro); setText('s-lock2', S.lock2); setText('s-lock3', S.lock3); setText('s-lock-note', S.lockNote);
+  setText('step2-title', S.step2); setText('s-tick', S.tick); setText('step3-title', S.step3); setText('step4-title', S.step4);
+  setText('desk-ttl', S.deskT); setText('desk-txt', S.deskX); setText('s-how-legend', S.howLegend); setText('s-r-instant', S.rInstant); setText('s-r-full', S.rFull);
+  setText('s-ia-tag1', S.iaTag1); setText('s-ia-tag2', S.iaTag2); setText('s-ia-dt', S.iaDt); setText('s-ia-p1', S.iaP1); setText('s-ia-p2', S.iaP2); setText('s-ia-p3', S.iaP3);
+  setText('s-fd-tag1', S.fdTag1); setText('s-fd-tag2', S.fdTag2); setText('s-fd-dt', S.fdDt); setText('s-fd-p1', S.fdP1); setText('s-fd-p2', S.fdP2);
+  setText('solar-ttl', S.solarT); setText('solar-txt', S.solarX); setText('s-so-tag1', S.soTag1); setText('s-so-tag2', S.soTag2);
+  setText('s-so-dt1', S.soDt1); setText('s-so-p1', S.soP1); setText('s-so-dt2', S.soDt2); setText('s-so-p2', S.soP2); setText('s-so-p3', S.soP3);
+  setText('proc-hd', S.hdOff); setText('proc-ttl', S.procT); setText('proc-txt', S.procX); setText('s-pr-tag1', S.prTag1); setText('s-pr-tag2', S.prTag2);
+  setText('s-pr-dt1', S.prDt1); setText('s-pr-p1', S.prP1); setText('s-pr-dt2', S.prDt2); setText('s-pr-p2', S.prP2);
+  setText('s3-none', S.s3None); setText('s3-ia-text', S.s3Instant); setText('go-instant', S.goInstant); setText('s3-ea-text', S.s3Bills); setText('go-bills', S.goBillsNew);
+  setText('s-offer-eyebrow', S.offerEyebrow); setText('offer-title', S.offerTitle); setText('s-offer-lede', S.offerLede);
   setText('s-mode-lab', S.modeLab); setText('mode-annual', S.modeAnnual); setText('mode-monthly', S.modeMonthly); setText('ea-book', S.bookCall);
   setText('step1-title', S.step1); setText('s-zip-label', S.zip); setText('zip-go', S.zipGo);
   setText('step1-change', S.change);
@@ -575,7 +733,7 @@ function setText(id, t){ $(id).textContent = t; }
   setText('ea-about', S.eaAbout); setText('s-ea-sqft', S.eaSqft); setText('s-ea-mtype', S.eaMtype); setText('s-ea-maddr', S.eaMaddr);
   setText('s-ea-first', S.eaFirst); setText('s-ea-last', S.eaLast); setText('s-ea-email', S.eaEmail); setText('s-ea-phone', S.eaPhone);
   setText('s-ea-consent', S.eaConsent); setText('ea-submit', S.eaSubmit); setText('ea-note', S.eaSubmitNote);
-  setText('ea-use-h', S.eaUseH); setText('ea-desk-l', S.eaDeskL); setText('ea-solar-l', S.eaSolarL); setText('s-ea-role', S.eaRole); setText('s-offers-hint', S.offersHint);
+  setText('ea-use-h', S.eaUseH); setText('ea-desk-l', S.eaDeskL); setText('ea-solar-l', S.eaSolarL); setText('s-ea-role', S.eaRole);
   setText('ea-failed-t', S.eaFailedT); setText('ea-retry', S.eaRetry); setText('ea-another', S.another);
   ['Church','Cathedral','School','Rectory','Convent','Hall','Office','Gymnasium','Other'].forEach(function(t){ $('ea-mtype').appendChild(el('option',{value:t},t)); });   // same list as the Solar form
   $('ea-mtype').insertBefore(el('option',{value:''},'Choose...'), $('ea-mtype').firstChild); $('ea-mtype').value = '';
@@ -668,15 +826,17 @@ function pickBuilding(b){
   resetForm(true);
   resetRight();
   remApply();
+  syncChoice();
   postHeight();
-  if (!state.offer) scrollParentTo($('offers'));
-  $('sqft').focus();
+  scrollParentTo($('step2'));
+  $('cb-desk').focus();
 }
 
 $('step1-change').addEventListener('click', function(){
   state.building = null; state.account = null;
   $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
-  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('pick-offer-note').hidden = true;
+  clearLists(); lkStatus(''); $('lk-manual').hidden = true;
+  syncChoice();
   postHeight();
 });
 $('county-use').addEventListener('change', function(){
@@ -1008,7 +1168,7 @@ function renderResult(body){
   var slot = el('span'); btns.appendChild(slot);
   renderReport(body.report, slot, body.submission_id || state.submissionId);
   var cb = el('button',{type:'button','class':'secondary'},S.checkBills);
-  cb.addEventListener('click', function(){ selectOffer('desk', true); var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
+  cb.addEventListener('click', function(){ choose({desk:true, how:'full', go:true}); var p = $('ea-panel'); scrollParentTo(p); p.focus(); });
   btns.appendChild(cb);
   if (state.mode === 'annual'){
     var more = el('button',{type:'button','class':'secondary'},S.moreAccurate);
@@ -1057,8 +1217,10 @@ function startAnother(){
   resetForm(false);
   resetRight();
   state.building = null; state.account = null;
+  state.choice = {desk:false, how:'instant', solar:false, go:false};
   $('step1-body').hidden = false; $('step1-change').hidden = true; $('step1-sel').textContent = '';
-  $('step2').hidden = true; clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('zip').value = '';
+  clearLists(); lkStatus(''); $('lk-manual').hidden = true; $('zip').value = '';
+  syncChoice();
   scrollParentTo($('step1')); postHeight();
 }
 ['sqft','btype','shared','ann-e','ann-g','c-name','c-email','c-phone','consent'].forEach(function(i){
@@ -1084,7 +1246,7 @@ function rzProbe(){
     ea.rz.options = r.body.options; ea.rz.phase = 'offer'; rzRender();
   }).catch(function(){});
 }
-function rzSet(patch){ for (var k in patch) ea.rz[k] = patch[k]; rzRender(); }
+function rzSet(patch){ for (var k in patch) ea.rz[k] = patch[k]; rzRender(); if (typeof syncChoice === 'function') syncChoice(); }
 function rzBtn(text, cls, fn){ var b = el('button',{type:'button','class':cls || 'secondary'}, text); b.addEventListener('click', fn); return b; }
 function rzLink(text, fn){ var b = el('button',{type:'button','class':'linkbtn'}, text); b.addEventListener('click', fn); return b; }
 function rzInput(id, label, type, val){
@@ -1473,59 +1635,63 @@ function resetRight(){
 }
 
 
-/* ------------------------------------------------------------------ offerings (the choices this page is about) */
+/* ------------------------------------------------------------------ steps 2 and 3: the choice, and what it needs */
 var BOOK_URL = 'https://www.catholicenergies.org/get-started';
-var OFFERS = [
-  {id:'instant', label:'No uploads needed', title:'Instant Audit', text:'Enter your numbers and get a first look in about two minutes.', live:true},
-  {id:'desk', label:'Upload your bills', title:'Desk Audit', text:'We read your utility bills and show where the strongest opportunities may be.', live:true},
-  {id:'solar', label:'Upload your bills', title:'Solar Assessment', text:'See whether solar could work for your roof or grounds.', live:true},
-  {id:'proc', label:'Clean energy', title:'Procurement', text:'Find incentives and options for buying cleaner energy.', live:false, badge:'Coming soon'}
-];
+// state.choice is what the client ticked; state.offer / state.bills are derived from it and drive the existing panels
+// exactly as before: offer 'instant' = the Instant Audit form, offer 'bills' = the upload form with bills.desk / bills.solar.
+state.choice = {desk:false, how:'instant', solar:false, go:false};
 state.offer = null; state.bills = {desk:false, solar:false};
-(function buildOffers(){
-  var box = $('offers');
-  OFFERS.forEach(function(o){
-    var b = el('button',{type:'button','class':'offer','data-offer':o.id,'aria-pressed':'false'});
-    if (!o.live) b.setAttribute('disabled','disabled');
-    b.appendChild(el('span',{'class':'lab'}, o.label));
-    b.appendChild(el('span',{'class':'ttl'}, o.title));
-    b.appendChild(el('span',{'class':'txt'}, o.text));
-    b.appendChild(el('span',{'class':'go'}, o.live ? 'Start' : o.badge));
-    if (o.live) b.addEventListener('click', function(){ selectOffer(o.id); });
-    box.appendChild(b);
-  });
-})();
-function selectOffer(id, forceOn){
-  var prev = state.offer;
-  if (id === 'instant'){ state.offer = 'instant'; state.bills = {desk:false, solar:false}; }
-  else {
-    if (state.offer !== 'bills'){ state.offer = 'bills'; state.bills = {desk:false, solar:false}; }
-    state.bills[id] = forceOn ? true : !state.bills[id];   // Desk Audit and Solar Assessment can be combined
-  }
-  syncOfferUI();
-  if (!state.building) lkStatus(S.nextLookup);
-  if (prev && prev !== state.offer){ if (state.offer === 'bills') prefillRight(); else prefillLeft(); }
-  updateFlows();
-  if (!state.building) scrollParentTo($('step1'));
+
+function manualBuilding(){ return !!(state.building && state.building.manual); }
+function instantAllowed(){ return !state.choice.solar && !manualBuilding(); }
+
+// Change one or more parts of the choice, then apply the rules and redraw.
+function choose(patch){
+  var c = state.choice, prev = state.offer;
+  for (var k in patch) c[k] = patch[k];
+  if (!instantAllowed()) c.how = 'full';            // Solar, or a building added by hand, needs the bill PDFs
+  if (!c.desk && !c.solar) c.go = false;             // nothing ticked: the form closes
+  state.offer = (c.desk && c.how === 'instant') ? 'instant' : (c.desk || c.solar) ? 'bills' : null;
+  state.bills = {desk: !!(c.desk && c.how === 'full'), solar: !!c.solar};
+  if (prev && state.offer && prev !== state.offer){ if (state.offer === 'bills') prefillRight(); else prefillLeft(); }
+  syncChoice();
 }
-function syncOfferUI(){
-  Array.prototype.forEach.call($('offers').children, function(b){
-    var id = b.getAttribute('data-offer');
-    var on = (id === 'instant') ? state.offer === 'instant' : !!state.bills[id];
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
+function syncChoice(){
+  var c = state.choice, have = !!state.building;
+  $('lockstrip').hidden = have; $('step2').hidden = !have; $('step3').hidden = !have;
+  // step 2 cards
+  $('cb-desk').checked = c.desk; $('cb-solar').checked = c.solar;
+  $('card-desk').className = 'card' + (c.desk ? ' sel' : ''); $('card-solar').className = 'card' + (c.solar ? ' sel' : '');
+  setText('desk-hd', c.desk ? S.hdSel : S.hdAdd); setText('solar-hd', c.solar ? S.hdSel : S.hdAdd);
+  var allow = instantAllowed();
+  var ri = $('r-instant').querySelector('input'), rf = $('r-full').querySelector('input');
+  ri.disabled = !allow; ri.checked = (c.how === 'instant'); rf.checked = (c.how === 'full');
+  $('r-instant').className = 'radio' + (!allow ? ' dis' : ri.checked ? ' on' : '');
+  $('r-full').className = 'radio' + (rf.checked ? ' on' : '');
+  $('d-instant').hidden = (c.how !== 'instant'); $('d-full').hidden = (c.how !== 'full');
+  var why = !allow ? (c.solar ? S.whySolar : S.whyManual) : '';
+  $('desk-why').hidden = !why; setText('desk-why', why);
+  // step 3
+  var mode = state.offer;
+  $('s3-none').hidden = !!mode; $('s3-instant').hidden = (mode !== 'instant'); $('s3-bills').hidden = (mode !== 'bills');
+  var chosen = !!(ea && ea.rz && ea.rz.chosen);
+  setText('s3-ea-text', chosen ? S.s3BillsChosen : S.s3Bills); setText('go-bills', chosen ? S.goBills : S.goBillsNew);
+  // the hidden "use these bills for" boxes inside the upload form stay in step with the cards
   $('ea-desk').checked = !!state.bills.desk; $('ea-solar').checked = !!state.bills.solar;
   $('ea-solar-q').hidden = !state.bills.solar;
   setText('ea-title', state.bills.desk && state.bills.solar ? S.eaTitleBoth : state.bills.solar ? S.eaTitleSolar : state.bills.desk ? S.eaTitleDesk : S.eaTitleNone);
-  postHeight();
+  updateFlows();
 }
-$('ea-desk').addEventListener('change', function(){ state.bills.desk = this.checked; syncOfferUI(); });
-$('ea-solar').addEventListener('change', function(){ state.bills.solar = this.checked; syncOfferUI(); });
+$('cb-desk').addEventListener('change', function(){ choose({desk: this.checked}); });
+$('cb-solar').addEventListener('change', function(){ choose({solar: this.checked}); });
+$('r-instant').querySelector('input').addEventListener('change', function(){ if (this.checked) choose({how:'instant'}); });
+$('r-full').querySelector('input').addEventListener('change', function(){ if (this.checked) choose({how:'full'}); });
+$('go-instant').addEventListener('click', function(){ choose({go:true}); scrollParentTo($('step4')); $('sqft').focus(); });
+$('go-bills').addEventListener('click', function(){ choose({go:true}); scrollParentTo($('step4')); $('ea-panel').focus(); });
+
 function updateFlows(){
-  var show = !!(state.offer && state.building);
-  $('step2').hidden = !show;
-  var askOffer = !!(state.building && !state.offer);
-  $('pick-offer-note').hidden = !askOffer; if (askOffer) setText('pick-offer-note', S.pickOffer);
+  var show = !!(state.offer && state.building && state.choice.go);
+  $('step4').hidden = !show;
   $('ia-panel').hidden = state.offer !== 'instant';
   var man = !!(state.building && state.building.manual && state.offer === 'instant');
   $('ia-manual-note').hidden = !man; if (man) setText('ia-manual-note', S.iaManual);
@@ -1533,7 +1699,7 @@ function updateFlows(){
   if (typeof ea === 'object' && ea && ea.rz) rzProbe();
   postHeight();
 }
-// desk -> instant: carry over what the client already typed (never overwrites left-hand entries)
+// upload form -> Instant Audit form: carry over what the client already typed (never overwrites entries)
 function prefillLeft(){
   if (!$('sqft').value && $('ea-sqft').value) $('sqft').value = $('ea-sqft').value;
   var nm = ($('ea-first').value.trim() + ' ' + $('ea-last').value.trim()).trim();
@@ -1542,6 +1708,38 @@ function prefillLeft(){
   if (!$('c-phone').value) $('c-phone').value = $('ea-phone').value;
   if (!$('consent').checked && $('ea-consent').checked) $('consent').checked = true;
 }
+
+/* ------------------------------------------------------------------ the offer overview (text only; nothing here is clickable) */
+var ICONS = {
+  desk: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  tag: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>'
+};
+var OVERVIEW = [
+  {icon:'desk', title:'Desk Audit', promise:'See where the strongest energy-saving opportunities may be, from the bills you already have.',
+   rows:[['Two ways to do it','Instant Audit: type in your monthly numbers for an automated result in about two minutes. Full Desk Audit: upload your bill PDFs and our staff review the result.'],
+         ['You get','A plain-language result for the building, with a short report you can download.'],
+         ['You need','Your last 12 months of utility bills.']]},
+  {icon:'sun', title:'Solar Assessment', promise:'Find out whether solar could work for your roof or grounds, before anyone comes out to look.',
+   rows:[['How it works','You upload your bill PDFs and answer a few quick questions about the roof or grounds. Our staff prepare the assessment.'],
+         ['You get','A first-pass view of whether solar fits this building and what to look at next.'],
+         ['You need','Your bill PDFs, the same ones used for a Full Desk Audit.']]},
+  {icon:'tag', title:'Clean Energy Procurement', off:true, badge:'Not yet available', promise:'Find incentives and options for buying cleaner energy for your institution.',
+   rows:[['How it will work','Using your bills, we look at the supply options and incentives available to you where you are.'],
+         ['You get','A short list of options and incentives that fit your building and your utility.'],
+         ['You need','Your bill PDFs. Bills you upload now will work for this when it opens.']]}
+];
+(function buildOverview(){
+  var g = $('offer-grid');
+  OVERVIEW.forEach(function(o){
+    var col = el('div',{'class':'ocol' + (o.off ? ' off' : '')});
+    var ico = el('div',{'class':'ico'}); ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[o.icon] + '</svg>'; col.appendChild(ico);   // fixed markup, never client text
+    var h = el('h3',null,o.title); if (o.badge){ h.appendChild(el('span',{'class':'pill'},o.badge)); } col.appendChild(h);
+    col.appendChild(el('p',{'class':'promise'},o.promise));
+    o.rows.forEach(function(r){ col.appendChild(el('div',{'class':'k'},r[0])); col.appendChild(el('div',{'class':'v'},r[1])); });
+    g.appendChild(col);
+  });
+})();
 if (/[?&]bare=1/.test(location.search)) $('intro').hidden = true;   // hide the heading when the Squarespace page already has one
 
 
@@ -1585,7 +1783,7 @@ function remStore(flow){
 /* ------------------------------------------------------------------ init */
 $('startmonth').value = defaultStart();
 buildRows();
-syncOfferUI();
+syncChoice();
 remApply();
 if (window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
 window.addEventListener('load', postHeight);
