@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Energy Assessment Resource Center</title>
 <!--
-  Energy Assessment Resource Center v0.5.0, 2026-10-21: building first, then the services (Desk Audit with Instant / Full
+  Energy Assessment Resource Center v0.5.1, 2026-10-21: the offer overview first, then Get started; v0.5.0: building first, then the services (Desk Audit with Instant / Full
   inside it, Solar Assessment, Procurement not yet available), then the bills step (earlier bills can be reused after an
   emailed code), then the existing form for the chosen path. Everything the page calls on the middleware is unchanged.
   v0.4, 2026-10-07: brand styling (playbook Apr 2026), entry-mode switch, one-screen flow, Solar Assessment questions.
@@ -178,6 +178,10 @@
   .ocol .v{font-size:.88rem;color:var(--ink)}
   .ocol.off .v{color:var(--muted)}
   .offer-head h2{text-transform:none;letter-spacing:0;font-size:1.5rem;margin-bottom:6px}
+  .offer-head .offer-grid{margin-bottom:10px}
+  .getstarted{background:var(--ink);color:#fff;border-radius:16px;padding:18px 22px;margin:18px 0 18px}
+  .getstarted .eyebrow{color:var(--gold);margin:0 0 4px}
+  .getstarted .gs-line{margin:0;font-weight:600;font-size:1rem}
   .step-head .num{flex:none}
 </style>
 </head>
@@ -189,6 +193,20 @@
     <p class="lede" id="s-lede"></p>
     <svg class="wave" viewBox="0 0 600 36" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="wg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#F89A1E"/><stop offset="1" stop-color="#DC6F2A"/></linearGradient></defs><path d="M0 20 C 30 20, 40 17, 70 17 S 110 24, 140 24 S 190 10, 230 10 S 290 30, 330 30 S 400 5, 450 5 S 530 33, 600 18" fill="none" stroke="url(#wg)" stroke-width="3" stroke-linecap="round"/></svg>
   </header>
+
+  <!-- What you can get here: the overview, read before anything is asked -->
+  <section id="offer" aria-labelledby="offer-title" class="offer-head">
+    <p class="eyebrow" id="s-offer-eyebrow"></p>
+    <h2 id="offer-title"></h2>
+    <p class="lede" id="s-offer-lede"></p>
+    <div class="offer-grid" id="offer-grid"></div>
+  </section>
+
+  <!-- Get started: the switch from reading to doing -->
+  <div class="getstarted" id="getstarted">
+    <p class="eyebrow" id="s-gs-eyebrow"></p>
+    <p class="gs-line" id="s-gs-line"></p>
+  </div>
 
   <!-- STEP 1: institution and building -->
   <section class="step" id="step1" aria-labelledby="step1-title">
@@ -528,14 +546,6 @@
     </section>
     </div>
 
-  <!-- What you can get here: shown from the start, stays on the page -->
-  <section id="offer" aria-labelledby="offer-title" class="offer-head">
-    <p class="eyebrow" id="s-offer-eyebrow"></p>
-    <h2 id="offer-title"></h2>
-    <p class="lede" id="s-offer-lede"></p>
-    <div class="offer-grid" id="offer-grid"></div>
-  </section>
-
 </div>
 
 <script>
@@ -577,8 +587,9 @@ var S = {
   s3Bills: 'Add your most recent 12 months of utility bills as PDFs on the next step. Upload once: everything you ticked uses the same files.',
   s3BillsChosen: 'You are using bills we already have. Nothing to upload: the next step asks about the building and you.',
   goBills: 'Continue', goBillsNew: 'Continue: add your bills',
+  gsEyebrow: 'Get started', gsLine: 'Three short steps: find your building, tell us what you would like, then tell us about your bills.',
   offerEyebrow: 'What you can get here', offerTitle: 'Three ways to see your building more clearly',
-  offerLede: 'All free, all built around the utility bills you already receive. Once we have found your building, you choose one or more of these.',
+  offerLede: 'All free, all built around the utility bills you already receive. Choose one or more of these once we have found your building.',
   remember: 'Remember my name and contact details on this device, so I do not have to retype them.',
   iaManual: 'Instant Audit works with a building that is already on file. Choose Full Desk Audit above: it adds this building for our team to review.',
   modeLab: 'Month by month gives the most accurate result. No monthly figures handy? Annual totals will do.',
@@ -712,7 +723,7 @@ function setText(id, t){ $(id).textContent = t; }
   setText('proc-hd', S.hdOff); setText('proc-ttl', S.procT); setText('proc-txt', S.procX); setText('s-pr-tag1', S.prTag1); setText('s-pr-tag2', S.prTag2);
   setText('s-pr-dt1', S.prDt1); setText('s-pr-p1', S.prP1); setText('s-pr-dt2', S.prDt2); setText('s-pr-p2', S.prP2);
   setText('s3-none', S.s3None); setText('s3-ia-text', S.s3Instant); setText('go-instant', S.goInstant); setText('s3-ea-text', S.s3Bills); setText('go-bills', S.goBillsNew);
-  setText('s-offer-eyebrow', S.offerEyebrow); setText('offer-title', S.offerTitle); setText('s-offer-lede', S.offerLede);
+  setText('s-gs-eyebrow', S.gsEyebrow); setText('s-gs-line', S.gsLine); setText('s-offer-eyebrow', S.offerEyebrow); setText('offer-title', S.offerTitle); setText('s-offer-lede', S.offerLede);
   setText('s-mode-lab', S.modeLab); setText('mode-annual', S.modeAnnual); setText('mode-monthly', S.modeMonthly); setText('ea-book', S.bookCall);
   setText('step1-title', S.step1); setText('s-zip-label', S.zip); setText('zip-go', S.zipGo);
   setText('step1-change', S.change);
@@ -1759,14 +1770,14 @@ if (/[?&]bare=1/.test(location.search)) $('intro').hidden = true;   // hide the 
   Array.prototype.forEach.call(document.querySelectorAll('.rem-t'), function(t){ t.textContent = S.remember; });
 })();
 
-// Opt-in: a returning visitor on the same device gets name, email, phone and role filled in. Stored only in this browser.
+// Opt-in: a returning visitor on the same device gets name, email and phone filled in (not the title/role). Stored only in this browser.
 var REM_KEY = 'ce_rc_contact_v1';
 function splitName(nm){ nm = (nm || '').trim(); var i = nm.lastIndexOf(' '); return i > 0 ? {first: nm.slice(0,i).trim(), last: nm.slice(i+1).trim()} : {first: nm, last: ''}; }
 function remApply(){
   var d = null; try { d = JSON.parse(localStorage.getItem(REM_KEY) || 'null'); } catch(e){}
   if (!d) return;
   if (d.first || d.last){ $('c-name').value = ((d.first || '') + ' ' + (d.last || '')).trim(); $('ea-first').value = d.first || ''; $('ea-last').value = d.last || ''; }
-  $('c-email').value = $('ea-email').value = d.email || ''; $('c-phone').value = $('ea-phone').value = d.phone || ''; $('ea-role').value = d.role || '';
+  $('c-email').value = $('ea-email').value = d.email || ''; $('c-phone').value = $('ea-phone').value = d.phone || '';   // the title/role is not remembered: it is typed fresh each time
   $('rem-ia').checked = $('rem-ea').checked = true;
 }
 function remStore(flow){
@@ -1775,7 +1786,6 @@ function remStore(flow){
     var d = flow === 'ia' ? splitName($('c-name').value) : {first: $('ea-first').value.trim(), last: $('ea-last').value.trim()};
     d.email = (flow === 'ia' ? $('c-email') : $('ea-email')).value.trim();
     d.phone = (flow === 'ia' ? $('c-phone') : $('ea-phone')).value.trim();
-    d.role = flow === 'ia' ? '' : $('ea-role').value.trim();
     localStorage.setItem(REM_KEY, JSON.stringify(d));
   } catch(e){}   // storage can be blocked; the form still works
 }
